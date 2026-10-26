@@ -13,7 +13,7 @@
   var MIND_HELP = 'Suggestions, questions, anything at all. About work, wellness, or how you\'re doing. The leadership team will see it.';
   var WHY_LINE = 'The passion and the purpose behind what we do.';
   var PUSH_ASK = 'Want a note on your phone when the Weekly goes up?';
-  var KIND_NAMES = { weekly: 'The Weekly', why: 'The Why', try: 'Try this month', meetup: 'Meetup' };
+  var KIND_NAMES = { weekly: 'The Weekly', why: 'The Why', try: "This Month's Share", meetup: 'Meetup' };
   var TRY_LABELS = ['Mental', 'Physical', 'Emotional', 'State'];
   var WEEKLY_PARTS = [['heads_ups', 'Heads-ups'], ['reminders', 'Reminders'], ['asked_did', 'You asked, we did']];
 
@@ -756,7 +756,7 @@
     if (tr) {
       h += tryCard(tr, false);
     } else {
-      h += '<article class="card try-card"><p class="kicker">' + icon('star', 'sm') + 'Try this month</p><p class="empty">This month\'s one fun thing will show here.</p></article>';
+      h += '<article class="card try-card"><p class="kicker">' + icon('star', 'sm') + 'This Month\'s Share</p><p class="empty">This month\'s share will show here.</p></article>';
     }
     return h;
   }
@@ -771,7 +771,7 @@
   }
   function tryCard(tr, ro) {
     var tid = ro ? 'try-title-preview' : 'try-title';
-    return '<article class="card try-card" aria-labelledby="' + tid + '"><p class="kicker">' + icon('star', 'sm') + 'Try this month</p>' +
+    return '<article class="card try-card" aria-labelledby="' + tid + '"><p class="kicker">' + icon('star', 'sm') + 'This Month\'s Share</p>' +
       '<p class="meta">' + esc((tr.label ? tr.label + ' · ' : '') + fmt(tr.publish_at || new Date().toISOString(), { month: 'long' })) + '</p>' +
       '<h3 id="' + tid + '">' + esc(tr.title) + '</h3>' +
       (tr.body ? '<p class="body-text">' + esc(tr.body) + '</p>' : '') +
@@ -1032,7 +1032,7 @@
     var h = !isApprover() ? '' : '<div class="actions new-row" style="margin-top:6px">' +
       '<button type="button" class="btn primary small" data-act="new-post" data-kind="weekly" id="new-weekly">' + icon('plusbox', 'sm') + '<span>New Weekly</span></button>' +
       '<button type="button" class="btn small" data-act="new-post" data-kind="why" id="new-why">' + icon('plusbox', 'sm') + '<span>New Why</span></button>' +
-      '<button type="button" class="btn small" data-act="new-post" data-kind="try" id="new-try">' + icon('plusbox', 'sm') + '<span>New Try this month</span></button></div>';
+      '<button type="button" class="btn small" data-act="new-post" data-kind="try" id="new-try">' + icon('plusbox', 'sm') + '<span>New Share</span></button></div>';
     var drafts = ps.filter(function (p) { return p.status === 'draft'; });
     var main = drafts.filter(function (p) { return p.kind !== 'try'; }).sort(function (x, y) { return (x.kind === 'weekly' ? 0 : 1) - (y.kind === 'weekly' ? 0 : 1); }),   // the Weekly first
       tries = drafts.filter(function (p) { return p.kind === 'try'; });
@@ -1040,7 +1040,7 @@
     if (!drafts.length) h += '<p class="empty">No drafts waiting.</p>';
     h += main.map(postRow).join('');
     if (tries.length) {
-      h += '<h2 class="section-title" id="try-pick-title">Try this month: pick one</h2><p class="section-sub">' + (tries.length > 1 ? 'Harmonia\'s suggestions. Picking one clears the others.' : 'Picking it puts it on The Why.') + '</p>' + tries.map(postRow).join('');
+      h += '<h2 class="section-title" id="try-pick-title">This Month\'s Share: pick one</h2><p class="section-sub">' + (tries.length > 1 ? 'Harmonia\'s suggestions. Picking one clears the others.' : 'Picking it puts it on The Why.') + '</p>' + tries.map(postRow).join('');
     }
     var review = ps.filter(function (p) { return p.status === 'leader_review'; });
     if (review.length) {
@@ -1071,7 +1071,7 @@
     if (!L.form) L.form = blankForm();
     var f = L.form, k = f.kind, editing = !!f.id;
     var h = '<form class="card" data-form="post" novalidate>' +
-      '<h3 style="margin-top:0">' + (editing ? 'Edit ' : 'New ') + esc({ weekly: 'Weekly', why: 'Why', try: 'Try this month' }[k]) + '</h3>';
+      '<h3 style="margin-top:0">' + (editing ? 'Edit ' : 'New ') + esc({ weekly: 'Weekly', why: 'Why', try: "This Month's Share" }[k]) + '</h3>';
     if (!editing || f.status === 'draft') {
       h += field('kind', 'What is it?', '<select id="f-kind" data-field="kind">' + ['weekly', 'why', 'try'].map(function (key) {
         return '<option value="' + key + '"' + (k === key ? ' selected' : '') + '>' + KIND_NAMES[key] + '</option>';
@@ -1089,7 +1089,7 @@
       h += field('body', 'A few words about it (optional)', areaF('body', f.body, ' maxlength="8000"'), 'The mission, a decision, what we want for our clients.');
       h += field('image_url', 'Photo or drawing link (optional)', inputF('image_url', 'url', f.image_url, ' placeholder="https://"'));
     } else {
-      h += field('title', 'The one fun thing to try', inputF('title', 'text', f.title, ' maxlength="200"'));
+      h += field('title', 'This month\'s share', inputF('title', 'text', f.title, ' maxlength="200"'));
       h += field('label', 'What kind?', '<select id="f-label" data-field="label"><option value="">Choose one (optional)</option>' + TRY_LABELS.map(function (l) {
         return '<option' + (f.label === l ? ' selected' : '') + '>' + esc(l) + '</option>'; }).join('') + '</select>');
       h += field('body', 'How to work it into your day', areaF('body', f.body, ' maxlength="8000"'));
