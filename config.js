@@ -10,5 +10,5 @@
 window.ARETE_CONFIG = {
   SUPABASE_URL: "https://ayqstpczfkqjppujplcz.supabase.co",
   SUPABASE_ANON_KEY: "sb_publishable_8vPx-WjKl7BpbB8BX6820w_m66xeliP",
-  VAPID_PUBLIC_KEY: "YOUR_VAPID_PUBLIC_KEY"
+  VAPID_PUBLIC_KEY: "BLTOk3_SE0g-65ADT0fuUWS6SB98pU1xnowDz3dEFglZOECOwACw7WdTFaC2e-lj2t-AgtgPyIndxbvR04mrBsA"
 };
