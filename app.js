@@ -526,13 +526,15 @@
     if (!p) return;
     var pieces = chunk(speechText(p));
     var voices = synth.getVoices() || [];
-    var voice = voices.filter(function (v) { return /^en(-|_)US/i.test(v.lang) && v.localService; })[0] ||
+    // a British voice first (Tiffany, 2026-10-26), then any English voice
+    var voice = voices.filter(function (v) { return /^en(-|_)GB/i.test(v.lang) && v.localService; })[0] ||
+                voices.filter(function (v) { return /^en(-|_)GB/i.test(v.lang); })[0] ||
                 voices.filter(function (v) { return /^en/i.test(v.lang); })[0] || null;
     S.speakingId = id; updateSpeakButtons();
     pieces.forEach(function (txt, i) {
       var u = new SpeechSynthesisUtterance(txt);
       if (voice) u.voice = voice;
-      u.lang = 'en-US'; u.rate = 0.95;
+      u.lang = voice ? voice.lang : 'en-GB'; u.rate = 1.1;
       if (i === pieces.length - 1) {
         u.onend = function () { if (S.speakingId === id) { S.speakingId = null; S.spoken[id] = true; updateSpeakButtons(); } };
       }
