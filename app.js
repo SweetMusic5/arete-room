@@ -774,7 +774,6 @@
   function tryCard(tr, ro) {
     var tid = ro ? 'try-title-preview' : 'try-title';
     return '<article class="card try-card" aria-labelledby="' + tid + '"><p class="kicker">' + icon('star', 'sm') + 'This Month\'s Share</p>' +
-      '<p class="meta">' + esc((tr.label ? tr.label + ' · ' : '') + fmt(tr.publish_at || new Date().toISOString(), { month: 'long' })) + '</p>' +
       '<h3 id="' + tid + '">' + esc(tr.title) + '</h3>' +
       (tr.body ? '<p class="body-text">' + esc(tr.body) + '</p>' : '') +
       '<p class="signed">Team Lavender\'s</p></article>';
