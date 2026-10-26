@@ -8,7 +8,7 @@
 //   node tools/arete-admin.mjs make-vapid-keys
 // (the private half stays in _secrets on Tiffany's Mac). Leave it as is to keep alerts off.
 window.ARETE_CONFIG = {
-  SUPABASE_URL: "YOUR_SUPABASE_URL",
-  SUPABASE_ANON_KEY: "YOUR_SUPABASE_ANON_KEY",
+  SUPABASE_URL: "https://ayqstpczfkqjppujplcz.supabase.co",
+  SUPABASE_ANON_KEY: "sb_publishable_8vPx-WjKl7BpbB8BX6820w_m66xeliP",
   VAPID_PUBLIC_KEY: "YOUR_VAPID_PUBLIC_KEY"
 };
