@@ -325,15 +325,21 @@
   }
   function demoTag() { return '<button type="button" class="demo-tag" data-act="demo-sheet" aria-label="Demo mode: tap for options">Demo</button>'; }
 
+  function myLink() { return S.key ? location.origin + location.pathname + '#k=' + S.key : location.href; }
   function a2hsSteps() {
+    // iOS 26 Safari (compact tabs) keeps Share behind the ••• button. Links opened inside another app
+    // (Claude, Gmail, Messenger, Facebook) open a mini-browser with no Add to Home Screen at all.
     return '<ol class="steps">' +
-      '<li><div>Tap the <strong>Share</strong> button <span class="ico-inline">' + icon('share') + '</span>. It is at the bottom or the top of Safari. ' +
-        'If you don\'t see it, tap the <strong>•••</strong> (More) button first, then <strong>Share</strong>.</div></li>' +
-      '<li><div>Scroll down the list and tap <strong>Add to Home Screen</strong> <span class="ico-inline">' + icon('plusbox') + '</span>. ' +
-        'If it isn\'t there, tap <strong>View More</strong> first.</div></li>' +
-      '<li><div>If you see <strong>Open as Web App</strong>, leave it on. Tap <strong>Add</strong>.</div></li>' +
+      '<li><div>Make sure you\'re in the <strong>Safari</strong> app. If you opened this link from another app and don\'t see Safari\'s buttons, ' +
+        'tap <strong>Copy my link</strong> below, open <strong>Safari</strong>, and paste it into the address bar.</div></li>' +
+      '<li><div>Tap the <strong>•••</strong> button (bottom right), then <strong>Share</strong> <span class="ico-inline">' + icon('share') + '</span>. ' +
+        'If you already see the Share button, just tap that.</div></li>' +
+      '<li><div>Scroll down and tap <strong>Add to Home Screen</strong> <span class="ico-inline">' + icon('plusbox') + '</span>. ' +
+        'If it isn\'t there, tap <strong>View More</strong> first. Leave <strong>Open as Web App</strong> on and tap <strong>Add</strong>.</div></li>' +
       '<li><div>Open The Arete Room from your Home Screen.</div></li>' +
-      '</ol>';
+      '</ol>' +
+      '<button type="button" class="btn block" data-act="copy-mylink" id="copy-mylink">' + icon('copy', 'sm') + '<span>Copy my link</span></button>' +
+      '<p class="hint">The Home Screen is optional. The Arete Room works right here in Safari too; only phone alerts need the Home Screen.</p>';
   }
 
   function renderGate() {
@@ -1483,6 +1489,11 @@
       case 'sign-out-ask': S.signOutAsk = true; render(); var sy = $('#sign-out-yes'); if (sy) sy.focus(); break;
       case 'sign-out-no': S.signOutAsk = false; render(); break;
       case 'sign-out-yes': signOutPhone(); break;
+      case 'copy-mylink':
+        var ml = myLink();
+        (navigator.clipboard ? navigator.clipboard.writeText(ml) : Promise.reject()).then(function () { toast('Link copied. Open Safari and paste it into the address bar.'); },
+          function () { toast('Press and hold the address bar to copy your link.'); });
+        break;
       case 'gate-continue': sessionStorageSet('a2hs-skip', '1'); S.gate.step = S.gate.next; renderGate(); break;
       case 'gate-retry': gate(); break;
       case 'demo-sheet': S.sheet = 'demo'; S.gate ? renderGate() : render(); var b = $('#demo-team'); if (b) b.focus(); break;
