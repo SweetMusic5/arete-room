@@ -3,7 +3,7 @@
 // Data (Supabase): always network (posts are POST requests and are never cached here);
 // the app keeps its own last copy so it can show something offline.
 // Phone alerts: shows the two kinds of alert (a new Weekly, a meetup time) and opens the app when tapped.
-const VERSION = 'arete-v3';
+const VERSION = 'arete-v4';   // 2026-11-18: Earlier Weeklies; no note picker; Turn alerts on; Read it to me skips emoji; tappable links
 const SHELL = [
   './', './index.html', './styles.css', './app.js', './config.js', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png', './icons/favicon-32.png',

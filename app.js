@@ -12,7 +12,9 @@
   var PREFIX = DEMO ? 'arete-demo:' : 'arete:';
   var MIND_HELP = 'Suggestions, questions, anything at all. About work, wellness, or how you\'re doing. The leadership team will see it.';
   var WHY_LINE = 'The passion and the purpose behind what we do.';
-  var PUSH_ASK = 'Want a note on your phone when the Weekly goes up?';
+  // Alerts: tell, don't ask (Tiffany, 2026-11-18: "just make it so they can get alerts")
+  var PUSH_HEAD = 'Turn alerts on';
+  var PUSH_LINE = 'Get a note on your phone every Monday when the new Weekly is out.';
   var KIND_NAMES = { weekly: 'The Weekly', why: 'The Why', try: "This Month's Share", meetup: 'Meetup' };
   var TRY_LABELS = ['Mental', 'Physical', 'Emotional', 'State'];
   var WEEKLY_PARTS = [['heads_ups', 'Heads-ups'], ['reminders', 'Reminders'], ['asked_did', 'You asked, we did']];
@@ -65,6 +67,24 @@
     return a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1];
   }
   function linesOf(t) { return String(t || '').split('\n').map(function (l) { return l.trim(); }).filter(Boolean); }
+  // Tappable links (2026-11-18): escape FIRST, then wrap only each http(s) address in a link.
+  // The address stops at a space or at an escaped quote or angle bracket; trailing . , ; : ! ? stay outside,
+  // and so does a closing bracket the address didn't open. The link text is the address without https://.
+  var URL_IN_TEXT = /https?:\/\/(?:(?!&quot;|&#39;|&lt;|&gt;)[^\s])+/gi;
+  function linkify(escaped) {
+    return String(escaped).replace(URL_IN_TEXT, function (u) {
+      var tail = '';
+      for (;;) {
+        var c = u.charAt(u.length - 1);
+        if ('.,;:!?'.indexOf(c) >= 0 || (c === ')' && (u.split('(').length < u.split(')').length))) { tail = c + tail; u = u.slice(0, -1); }
+        else break;
+      }
+      var shown = u.replace(/^https?:\/\//i, '');
+      if (!shown || /^[\/.]/.test(shown)) return u + tail;
+      return '<a href="' + u + '" target="_blank" rel="noopener noreferrer">' + shown + '</a>' + tail;
+    });
+  }
+  function escLink(s) { return linkify(esc(s)); }
 
   // ------------------------------------------------------------------
   // Icons (inline stroke SVG)
@@ -159,6 +179,8 @@
       approving: null, approveAt: '', form: null, pollForm: null, meetForm: { at: '', body: '' }, addName: '', addRole: 'team',
       newLink: null, loading: false, confirm: null, late: null, unanswered: 0, unfold: {}, looks: null, lookText: {} };
   }
+  // Earlier Weeklies (bottom of The Weekly): closed until tapped, loaded fresh each time it opens.
+  function freshEarlier() { return { open: false, loading: false, list: null, openId: null }; }
   function startTab() {
     try { var t = new URL(location.href).searchParams.get('tab'); return t === 'talk' || t === 'why' ? t : 'home'; } catch (e) { return 'home'; }
   }
@@ -171,7 +193,6 @@
     leaders: [],
     tab: startTab(),                      // every open starts at The Weekly (an alert can open Talk to us)
     noteDraft: store.get('noteDraft', ''),
-    noteTo: store.get('noteTo', { mode: 'all', ids: [] }),
     noteSent: null,
     micHint: false,
     rec: null,
@@ -182,8 +203,11 @@
     gate: null,
     heroFull: !store.get('heroSeen'),     // the big header on the first open, a shorter one after that
     pushOn: !!store.get('pushOn'),
+    pushHome: false,                      // iPhone Safari: the Home Screen steps are open on the alerts card
+    earlier: freshEarlier(),
     lead: freshLead()
   };
+  store.del('noteTo');                    // "Who should see this?" is gone (2026-11-18): every note goes to the whole leadership team
 
   function saveCache() { store.set('cache', { me: S.me, posts: S.posts, poll: S.poll, leaders: S.leaders }); }
   function loadCache() {
@@ -234,7 +258,7 @@
     if (code === 'not_signed_in') { signOutLocal(); gate(); return; }
     toast(FRIENDLY[code] || 'Something went wrong. Please try again.');
   }
-  function signOutLocal() { S.token = null; store.del('token'); store.del('cache'); S.me = null; }
+  function signOutLocal() { S.token = null; store.del('token'); store.del('cache'); S.me = null; S.earlier = freshEarlier(); }
 
   // ------------------------------------------------------------------
   // Start-up and sign-in
@@ -425,7 +449,10 @@
     if (Notification.permission === 'denied') return 'blocked';
     return 'yes';
   }
-  function showPushAsk() { return !!S.me && pushSupport() === 'yes' && !S.pushOn && !store.get('pushAsked'); }
+  function showPushAsk() {
+    var sup = pushSupport();
+    return !!S.me && (sup === 'yes' || (sup === 'needs-home' && !!VAPID)) && !S.pushOn && !store.get('pushAsked');
+  }
   function b64ToBytes(s) {
     var p = s.replace(/-/g, '+').replace(/_/g, '/'); p += '='.repeat((4 - p.length % 4) % 4);
     var bin = atob(p), out = new Uint8Array(bin.length);
@@ -473,13 +500,20 @@
       return sub.unsubscribe().catch(function () {}).then(function () { return rpc('push_unsubscribe', { p_token: S.token, p_endpoint: ep }); });
     }).then(function () { render(); toast('Alerts are off on this phone.'); }, function () { render(); });
   }
+  // Under the Weekly: tells, doesn't ask (2026-11-18). On an iPhone in Safari, alerts need the Home Screen
+  // first, so the button shows those steps; from the Home Screen app the same button turns alerts on.
   function pushAskCard() {
     if (!showPushAsk()) return '';
-    return '<aside class="card soft push-ask" aria-labelledby="push-ask-title"><p class="kicker">' + icon('bell', 'sm') + 'Phone alerts</p>' +
-      '<p class="push-q" id="push-ask-title">' + PUSH_ASK + '</p>' +
-      '<p class="hint">Just two kinds: a new Weekly, and when a meetup time is set.</p>' +
-      '<div class="actions"><button type="button" class="btn primary small" data-act="push-yes" id="push-yes">' + icon('bell', 'sm') + '<span>Yes, please</span></button>' +
-      '<button type="button" class="btn small" data-act="push-later" id="push-later">Not now</button></div></aside>';
+    var home = pushSupport() === 'needs-home';
+    var h = '<aside class="card soft push-ask" aria-labelledby="push-ask-title"><p class="kicker">' + icon('bell', 'sm') + 'Phone alerts</p>' +
+      '<h3 class="push-q" id="push-ask-title">' + PUSH_HEAD + '</h3>' +
+      '<p class="push-line">' + PUSH_LINE + '</p>';
+    if (home && S.pushHome) {
+      h += '<p class="push-home" id="push-home" tabindex="-1">First put The Arete Room on your Home Screen. Then open it from there and tap <strong>Turn alerts on</strong>.</p>' + a2hsSteps();
+    } else {
+      h += '<div class="actions"><button type="button" class="btn primary small" data-act="' + (home ? 'push-home' : 'push-yes') + '" id="push-yes">' + icon('bell', 'sm') + '<span>' + PUSH_HEAD + '</span></button></div>';
+    }
+    return h + '<button type="button" class="link-btn quiet push-hide" data-act="push-later" id="push-later">Not now</button></aside>';
   }
 
   // "Sign out of this phone"
@@ -495,7 +529,7 @@
     }).then(function () {
       signOutLocal();
       ['key', 'tokenKey', 'noteDraft', 'noteTo', 'pushOn', 'pushAsked'].forEach(store.del);
-      S.noteDraft = ''; S.noteTo = { mode: 'all', ids: [] }; S.pushOn = false; S.lead = freshLead(); S.posts = []; S.poll = null;
+      S.noteDraft = ''; S.pushOn = false; S.lead = freshLead(); S.posts = []; S.poll = null; S.earlier = freshEarlier();
       S.key = keyFromUrl(); S.signedOut = true;
       if (S.key) { store.set('key', S.key); gate(); } else { S.gate = { step: 'signedout' }; renderGate(); }
     });
@@ -504,18 +538,41 @@
   // ------------------------------------------------------------------
   // Read it to me (on-device speech), on The Weekly only
   // ------------------------------------------------------------------
+  // What the voice says (2026-11-18): no emoji or symbol-only characters (⋮ ••• ★ → ✓ and pictographs),
+  // and a web link is said as just its site name (https://www.example.com/book → example.com).
+  var NOT_SAID = (function () {
+    var basic = '[\\u2022\\u2023\\u2043\\u2219\\u25E6\\u00B7\\u22EE-\\u22F1\\u2190-\\u21FF\\u2500-\\u27BF\\u2B00-\\u2BFF\\uFE0E\\uFE0F\\u200D\\u20E3]';
+    try { return new RegExp('\\p{Extended_Pictographic}|\\p{Emoji_Modifier}|\\p{Regional_Indicator}|' + basic, 'gu'); }
+    catch (e) { return new RegExp(basic + '|[\\uD83C-\\uDBFF][\\uDC00-\\uDFFF]', 'g'); }   // older phones: the basic set + every pictograph pair
+  })();
+  function siteName(u) {
+    var m = String(u).match(/^(?:https?:\/\/)?(?:www\.)?([^\/?#:\s]+)/i);
+    return m ? m[1].replace(/[.,;:!?)]+$/, '') : '';
+  }
+  function sayable(t) {
+    return String(t || '')
+      .replace(/\bhttps?:\/\/[^\s]+|\bwww\.[^\s]+/gi, function (u) {
+        var tail = (u.match(/[.,;:!?)]+$/) || [''])[0];
+        return siteName(u) + tail;
+      })
+      .replace(NOT_SAID, ' ')
+      .replace(/\s+/g, ' ').replace(/\s+([.,;:!?])/g, '$1').trim();
+  }
   function speechText(p) {
-    var parts = ['The Weekly. ' + fmtDay(p.publish_at) + '.', p.title + '.'];
-    linesOf(p.body).forEach(function (l) { parts.push(l); });
+    var parts = ['The Weekly. ' + fmtDay(p.publish_at) + '.', sayable(p.title) + '.'];
+    function say(l) { var t = sayable(l); if (/[A-Za-z0-9]/.test(t)) parts.push(t); }   // a line of only symbols is skipped
+    linesOf(p.body).forEach(say);
     WEEKLY_PARTS.forEach(function (s) {
-      var ls = linesOf(p[s[0]]);
-      if (ls.length) { parts.push(s[1] + '.'); ls.forEach(function (l) { parts.push(l); }); }
+      var ls = linesOf(p[s[0]]).filter(function (l) { return /[A-Za-z0-9]/.test(sayable(l)); });
+      if (ls.length) { parts.push(s[1] + '.'); ls.forEach(say); }
     });
     parts.push('From Team Lavender\'s.');
-    return parts.map(function (t) { return /[.!?]$/.test(t) ? t : t + '.'; }).join(' ').replace(/\[|\]/g, '');
+    // brackets come off before the full stop is added, so "[A line.]" is said once, not as an empty sentence
+    return parts.map(function (t) { t = t.replace(/\[|\]/g, '').trim(); return /[.!?]$/.test(t) ? t : t + '.'; }).join(' ');
   }
   function chunk(text) {
-    var bits = text.match(/[^.!?\n]+[.!?]*/g) || [text], out = [], cur = '';
+    // a sentence ends at . ! ? followed by a space (so a site name like example.com is never cut in two)
+    var bits = text.match(/[^.!?\n]+(?:[.!?]+(?=[^\s.!?])[^.!?\n]*)*[.!?]*/g) || [text], out = [], cur = '';
     bits.forEach(function (b) {
       if ((cur + b).length > 180 && cur) { out.push(cur); cur = ''; }
       cur += b;
@@ -642,7 +699,7 @@
   function lineList(ls) {
     return '<ul class="lines">' + ls.map(function (l) {
       var m = l.match(/^\s*shout[- ]?out:\s*(.*)$/i);
-      return m ? '<li class="shout"><span class="shout-label">Shout-out:</span> ' + esc(m[1]) + '</li>' : '<li>' + esc(l) + '</li>';
+      return m ? '<li class="shout"><span class="shout-label">Shout-out:</span> ' + escLink(m[1]) + '</li>' : '<li>' + escLink(l) + '</li>';
     }).join('') + '</ul>';
   }
   function weeklyParts(p) {
@@ -659,8 +716,41 @@
     var name = S.me ? firstName(S.me.name) : '';
     var weekly = latest('weekly');
     var h = '<div class="welcome"><h2>Welcome, ' + esc(name) + '</h2><p>Here is this week from Team Lavender\'s.</p></div>';
-    if (!weekly) return h + '<div class="card"><p class="kicker">' + icon('sprig', 'sm') + 'The Weekly</p><p class="empty">The first Weekly arrives on a Monday morning.</p></div>' + pushAskCard();
-    return h + weeklyCard(weekly, false) + pushAskCard();
+    if (!weekly) return h + '<div class="card"><p class="kicker">' + icon('sprig', 'sm') + 'The Weekly</p><p class="empty">The first Weekly arrives on a Monday morning.</p></div>' + pushAskCard() + earlierBlock();
+    return h + weeklyCard(weekly, false) + pushAskCard() + earlierBlock();
+  }
+  // Earlier Weeklies: one button at the very bottom; the past ones open below it, newest first.
+  // Read-only: the words only (no hearts, no Read it to me).
+  function earlierBlock() {
+    var E = S.earlier;
+    var h = '<div class="earlier-wrap"><button type="button" class="btn block earlier-btn" data-act="earlier" id="earlier-btn" aria-expanded="' + E.open + '" aria-controls="earlier-list">' +
+      icon('book', 'sm') + '<span>' + (E.open ? 'Hide earlier Weeklies' : 'Earlier Weeklies') + '</span></button></div>';
+    if (!E.open) return h;
+    h += '<section class="card earlier" id="earlier-list" aria-labelledby="earlier-title"><p class="kicker">' + icon('sprig', 'sm') + 'The Weekly</p>' +
+      '<h3 id="earlier-title">Earlier Weeklies</h3>';
+    if (E.loading || !E.list) return h + '<p class="empty" role="status">Loading…</p></section>';
+    if (!E.list.length) return h + '<p class="empty" role="status">No earlier Weeklies yet.</p></section>';
+    h += '<ul class="earlier-list">' + E.list.map(function (p) {
+      var on = E.openId === p.id, pid = 'past-' + esc(p.id);
+      return '<li class="earlier-item' + (on ? ' open' : '') + '"><button type="button" class="earlier-row" data-act="earlier-open" data-id="' + esc(p.id) + '" id="pastbtn-' + esc(p.id) + '" aria-expanded="' + on + '" aria-controls="' + pid + '">' +
+        '<span class="earlier-title">' + esc(p.title) + '</span><span class="earlier-date">' + esc(p.publish_at ? fmtDay(p.publish_at) : '') + '</span></button>' +
+        (on ? '<div class="past-weekly" id="' + pid + '">' + weeklyParts(p) +
+          (safeUrl(p.image_url) ? '<img class="post-img" src="' + esc(p.image_url) + '" alt="' + esc(p.title) + '" loading="lazy">' : '') +
+          '<p class="signed">Team Lavender\'s</p></div>' : '') + '</li>';
+    }).join('') + '</ul></section>';
+    return h;
+  }
+  function toggleEarlier() {
+    var E = S.earlier;
+    if (E.open) { S.earlier = freshEarlier(); render(); var b = $('#earlier-btn'); if (b) b.focus({ preventScroll: true }); return; }
+    E.open = true; E.loading = true; E.list = null; E.openId = null; render();
+    var tok = S.token;
+    rpc('earlier_weeklies', { p_token: tok }).then(function (r) {
+      if (tok !== S.token || !S.earlier.open) return;
+      S.earlier.list = Array.isArray(r) ? r : []; S.earlier.loading = false; softRender();
+    }, function (e) {
+      S.earlier = freshEarlier(); render(); handleErr(e);
+    });
   }
   // The Weekly card exactly as the team sees it. ro = read-only copy for leadership's Preview.
   function weeklyCard(weekly, ro) {
@@ -692,7 +782,7 @@
   function meetupCard(m) {
     return '<article class="card meetup" aria-labelledby="meet-' + esc(m.id) + '"><p class="kicker">' + icon('calendar', 'sm') + 'Team Lab Meetup</p>' +
       '<h3 id="meet-' + esc(m.id) + '">' + esc(fmtDay(m.starts_at) + ' · ' + fmtTime(m.starts_at)) + '</h3>' +
-      (m.body ? '<p class="body-text">' + esc(m.body) + '</p>' : '') +
+      (m.body ? '<p class="body-text">' + escLink(m.body) + '</p>' : '') +
       '<p>Optional, come if you can.</p>' + rsvpBlock(m) +
       '<p class="signed">Team Lavender\'s</p></article>';
   }
@@ -700,7 +790,7 @@
     var mine = pl.options.some(function (o) { return o.mine; });
     return '<article class="card poll" aria-labelledby="poll-title"><p class="kicker">' + icon('calendar', 'sm') + 'Next meetup time</p>' +
       '<h3 id="poll-title">When works for you?</h3>' +
-      (pl.note ? '<p class="body-text">' + esc(pl.note) + '</p>' : '') +
+      (pl.note ? '<p class="body-text">' + escLink(pl.note) + '</p>' : '') +
       '<p class="hint" id="poll-help">Tap every time that works for you.</p>' +
       '<div class="poll-opts" role="group" aria-labelledby="poll-title" aria-describedby="poll-help">' + pl.options.map(function (o) {
         return '<button type="button" class="poll-opt" data-act="vote" data-id="' + esc(o.id) + '" id="vote-' + esc(o.id) + '" aria-pressed="' + !!o.mine + '">' +
@@ -710,17 +800,6 @@
       }).join('') + '</div>' +
       (mine ? '<p class="done-note">Thank you. The leadership team will pick the time that works best.</p>' : '') +
       '<p class="signed">Team Lavender\'s</p></article>';
-  }
-  function toChoices() {
-    var leaders = S.leaders.filter(function (l) { return !S.me || l.id !== S.me.id; });
-    var some = S.noteTo.mode === 'some';
-    return '<fieldset class="to-choice"><legend>Who should see this?</legend>' +
-      '<label class="radio-row" for="to-all"><input type="radio" name="to" id="to-all" value="all" data-to="mode"' + (!some ? ' checked' : '') + '> The leadership team</label>' +
-      '<label class="radio-row" for="to-some"><input type="radio" name="to" id="to-some" value="some" data-to="mode"' + (some ? ' checked' : '') + '> Just these people:</label>' +
-      '<div class="to-names">' + leaders.map(function (l) {
-        var on = some && S.noteTo.ids.indexOf(l.id) >= 0;
-        return '<label class="check-row" for="to-' + esc(l.id) + '"><input type="checkbox" id="to-' + esc(l.id) + '" data-to="id" value="' + esc(l.id) + '"' + (on ? ' checked' : '') + '> ' + esc(l.name) + '</label>';
-      }).join('') + '</div></fieldset>';
   }
   function viewTalk() {
     var ms = nextMeetups(), h = '';
@@ -732,9 +811,8 @@
 
     h += '<section class="card mind" aria-labelledby="mind-title">';
     if (S.noteSent) {
-      var who = S.noteSent.names && S.noteSent.names.length ? joinNames(S.noteSent.names) + ' will see this.' : 'The leadership team will see this.';
       h += '<div class="thanks" role="status"><div class="check">' + icon('check') + '</div>' +
-        '<p class="big">Thank you.</p><p>' + esc(who) + '</p>' +
+        '<p class="big">Thank you.</p><p>The leadership team will see this.</p>' +
         '<div class="actions" style="justify-content:center"><button type="button" class="btn small" data-act="note-again" id="note-again">Write another</button></div></div>';
     } else {
       var listening = !!S.rec;
@@ -743,7 +821,6 @@
         '<label class="sr-only" for="note">Your note</label>' +
         '<textarea id="note" aria-describedby="mind-help" maxlength="4000" placeholder="Type here, or tap to talk">' + esc(S.noteDraft) + '</textarea>' +
         (S.micHint ? '<p class="hint" role="status">Tap in the box, then tap the microphone on your keyboard to talk.</p>' : '') +
-        toChoices() +
         '<div class="actions">' +
         '<button type="button" class="btn' + (listening ? ' listening' : '') + '" data-act="talk" id="talk-btn" aria-pressed="' + listening + '">' + icon('mic') + '<span>' + (listening ? 'Listening… tap to stop' : 'Tap to talk') + '</span></button>' +
         '<button type="button" class="btn primary" data-act="send-note" id="send-note">' + icon('send') + '<span>Send</span></button>' +
@@ -774,14 +851,14 @@
     return '<article class="card why-card" aria-labelledby="' + tid + '"><p class="kicker">' + icon('flame', 'sm') + 'The why</p>' +
       '<h3 id="' + tid + '" class="why-quote">' + esc(why.title) + '</h3>' +
       (safeUrl(why.image_url) ? '<img class="post-img" src="' + esc(why.image_url) + '" alt="' + esc(why.title) + '" loading="lazy">' : '') +
-      (why.body ? '<p class="body-text">' + esc(why.body) + '</p>' : '') +
+      (why.body ? '<p class="body-text">' + escLink(why.body) + '</p>' : '') +
       '<p class="signed">Team Lavender\'s</p></article>';
   }
   function tryCard(tr, ro) {
     var tid = ro ? 'try-title-preview' : 'try-title';
     return '<article class="card try-card" aria-labelledby="' + tid + '"><p class="kicker">' + icon('star', 'sm') + 'This Month\'s Share</p>' +
       '<h3 id="' + tid + '">' + esc(tr.title) + '</h3>' +
-      (tr.body ? '<p class="body-text">' + esc(tr.body) + '</p>' : '') +
+      (tr.body ? '<p class="body-text">' + escLink(tr.body) + '</p>' : '') +
       '<p class="signed">Team Lavender\'s</p></article>';
   }
 
@@ -961,7 +1038,7 @@
       if (l.head) { if (inList) { h += '</ul>'; inList = false; } h += '<h4 class="fold-head">' + esc(l.head) + '</h4>'; }
       if (!inList) { h += '<ul class="lines">'; inList = true; }
       var m = l.text.match(/^\s*shout[- ]?out:\s*(.*)$/i);
-      h += m ? '<li class="shout"><span class="shout-label">Shout-out:</span> ' + esc(m[1]) + '</li>' : '<li>' + esc(l.text) + '</li>';
+      h += m ? '<li class="shout"><span class="shout-label">Shout-out:</span> ' + escLink(m[1]) + '</li>' : '<li>' + escLink(l.text) + '</li>';
     });
     if (inList) h += '</ul>';
     var more = all.length > 2;
@@ -1127,7 +1204,7 @@
     if (!M.meetups.length) h += '<p class="empty">No meetup set yet. Pick a time from the poll, or set one below.</p>';
     M.meetups.forEach(function (m) {
       h += '<article class="card post-row"><span class="pill plum">' + icon('calendar', 'sm') + 'Team Lab Meetup</span>' +
-        '<h4>' + esc(fmtDay(m.starts_at) + ' · ' + fmtTime(m.starts_at)) + '</h4>' + (m.body ? '<p class="body-text meta">' + esc(m.body) + '</p>' : '') + countsLine(m) +
+        '<h4>' + esc(fmtDay(m.starts_at) + ' · ' + fmtTime(m.starts_at)) + '</h4>' + (m.body ? '<p class="body-text meta">' + escLink(m.body) + '</p>' : '') + countsLine(m) +
         '<div class="actions"><button type="button" class="btn small" data-act="who" data-id="' + m.id + '" id="who-' + m.id + '" aria-expanded="' + !!L.who[m.id] + '">' + icon('eye', 'sm') + '<span>Who\'s coming</span></button>' +
         (isApprover() ? '<button type="button" class="btn small" data-act="ask-meet-down" data-id="' + m.id + '" id="meetdown-' + m.id + '">Take it down</button>' : '') + '</div>' +
         (L.confirm && L.confirm.id === m.id ? confirmBox(L.confirm, 'Take it down') : '') + whoBox(m.id) + '</article>';
@@ -1137,7 +1214,7 @@
     var open = M.polls.filter(function (p) { return p.status === 'open'; })[0];
     if (open) {
       h += '<article class="card poll-lead"><span class="pill">Open · ' + open.people_voted + (open.people_voted === 1 ? ' person has' : ' people have') + ' tapped</span>' +
-        (open.note ? '<p class="body-text">' + esc(open.note) + '</p>' : '') +
+        (open.note ? '<p class="body-text">' + escLink(open.note) + '</p>' : '') +
         open.options.map(function (o) {
           return '<div class="opt-row"><div class="grow"><strong>' + esc(fmtWhen(o.starts_at)) + '</strong>' +
             '<p class="meta">' + (o.count ? o.count + ' can make it: ' + esc(o.names.join(', ')) : 'No taps yet') + '</p></div>' +
@@ -1149,7 +1226,7 @@
     }
     M.polls.filter(function (p) { return p.status === 'draft'; }).forEach(function (d) {
       h += '<article class="card poll-lead"><span class="pill plum">Draft' + (d.created_by ? ' by ' + esc(d.created_by) : ' from Harmonia') + '</span>' +
-        (d.note ? '<p class="body-text">' + esc(d.note) + '</p>' : '') +
+        (d.note ? '<p class="body-text">' + escLink(d.note) + '</p>' : '') +
         '<ul class="lines">' + d.options.map(function (o) { return '<li>' + esc(fmtWhen(o.starts_at)) + '</li>'; }).join('') + '</ul><div class="actions">' +
         (isApprover() ? '<button type="button" class="btn small primary" data-act="poll-open" data-id="' + d.id + '" id="pollopen-' + d.id + '"' + (open ? ' disabled' : '') + '>' + icon('check', 'sm') + '<span>Approve and open</span></button>' : '') +
         (isApprover() ? '<button type="button" class="btn small" data-act="poll-edit" data-id="' + d.id + '" id="polledit-' + d.id + '">' + icon('edit', 'sm') + '<span>Edit</span></button>' : '') +
@@ -1250,7 +1327,7 @@
     if (sup === 'yes') {
       alerts = S.pushOn
         ? '<p>Alerts are on. You\'ll get a note when the Weekly goes up and when a meetup time is set.</p><button type="button" class="btn block" data-act="push-off" id="push-off">Turn alerts off</button>'
-        : '<p>' + PUSH_ASK + '</p><button type="button" class="btn block" data-act="push-yes" id="push-on">' + icon('bell', 'sm') + '<span>Turn alerts on</span></button>';
+        : '<p>' + PUSH_LINE + '</p><button type="button" class="btn block" data-act="push-yes" id="push-on">' + icon('bell', 'sm') + '<span>' + PUSH_HEAD + '</span></button>';
     } else if (sup === 'needs-home') {
       alerts = '<p>Alerts work once The Arete Room is on your Home Screen.</p>';
     } else if (sup === 'blocked') {
@@ -1288,6 +1365,7 @@
   // ------------------------------------------------------------------
   function setTab(t) {
     if (S.speakingId) stopSpeaking();
+    if (t !== 'home') S.earlier = freshEarlier();
     S.tab = t;
     if (t === 'lead') loadLead();
     if (t === 'talk' || t === 'home' || t === 'why') refreshQuiet();
@@ -1335,18 +1413,11 @@
     var ta = $('#note');
     var body = (ta ? ta.value : S.noteDraft).trim();
     if (!body) { toast('Write a few words first.'); if (ta) ta.focus(); return; }
-    var to = null;
-    if (S.noteTo.mode === 'some') {
-      var live = S.leaders.map(function (l) { return l.id; });
-      to = S.noteTo.ids.filter(function (id) { return live.indexOf(id) >= 0; });
-      if (!to.length) { toast('Choose at least one name, or pick The leadership team.'); return; }
-    }
     if (S.rec) { try { S.rec.stop(); } catch (e) { /* ignore */ } }
     var btn = $('#send-note'); if (btn) btn.disabled = true;
-    rpc('send_note', { p_token: S.token, p_body: body, p_to: to }).then(function (r) {
+    rpc('send_note', { p_token: S.token, p_body: body, p_to: null }).then(function () {   // always the whole leadership team
       S.noteDraft = ''; store.del('noteDraft');
-      S.noteSent = { names: r && r.to ? r.to : null };
-      S.noteTo = { mode: 'all', ids: [] }; store.del('noteTo');
+      S.noteSent = true;
       S.micHint = false; render();
       var t = $('#note-again'); if (t) t.focus({ preventScroll: true });
     }, function (e) { if (btn) btn.disabled = false; handleErr(e); });
@@ -1482,7 +1553,10 @@
       case 'talk': toggleTalk(); break;
       case 'send-note': sendNote(); break;
       case 'note-again': S.noteSent = null; render(); var n = $('#note'); if (n) n.focus(); break;
+      case 'earlier': toggleEarlier(); break;
+      case 'earlier-open': S.earlier.openId = S.earlier.openId === id ? null : id; render(); var eb = document.getElementById('pastbtn-' + id); if (eb) eb.focus({ preventScroll: true }); break;
       case 'push-yes': enablePush(); break;
+      case 'push-home': S.pushHome = true; render(); var ph = $('#push-home'); if (ph) ph.focus({ preventScroll: true }); break;
       case 'push-later': store.set('pushAsked', true); render(); toast('No problem. You can turn alerts on any time under This phone.'); break;
       case 'push-off': disablePush(); break;
       case 'phone-sheet': S.sheet = 'phone'; S.signOutAsk = false; render(); var pc = $('#sheet-close'); if (pc) pc.focus(); break;
@@ -1630,22 +1704,6 @@
     else if (el.id === 'approve-at') L.approveAt = el.value;
     else if (el.id === 'meet-at') L.meetForm.at = el.value;
     else if (el.id === 'add-role') L.addRole = el.value;
-    else if (el.getAttribute('data-to') === 'mode') {
-      S.noteTo = { mode: el.value === 'some' ? 'some' : 'all', ids: el.value === 'some' ? S.noteTo.ids : [] };
-      store.set('noteTo', S.noteTo); render();
-    } else if (el.getAttribute('data-to') === 'id') {
-      var ids = S.noteTo.mode === 'some' ? S.noteTo.ids.slice() : [];
-      if (el.checked) { if (ids.indexOf(el.value) < 0) ids.push(el.value); } else ids = ids.filter(function (x) { return x !== el.value; });
-      var choices = S.leaders.filter(function (l) { return !S.me || l.id !== S.me.id; });
-      if (choices.length > 1 && choices.every(function (l) { return ids.indexOf(l.id) >= 0; })) {
-        // everyone ticked = the whole leadership team (Just these people is for one, two or three)
-        S.noteTo = { mode: 'all', ids: [] }; store.set('noteTo', S.noteTo); render();
-        toast('That is everyone, so it goes to the whole leadership team.');
-        var ta2 = $('#to-all'); if (ta2) ta2.focus();
-        return;
-      }
-      S.noteTo = { mode: 'some', ids: ids }; store.set('noteTo', S.noteTo); render();
-    }
   });
   document.addEventListener('submit', function (e) {
     var f = e.target.getAttribute('data-form');
@@ -1692,6 +1750,10 @@
       var lastMonday = new Date(new Date(nextWeeklySlot()).getTime() - 7 * 864e5).toISOString();
       var az = new Date(Date.now() - 7 * 3600e3), nextMonth = new Date(Date.UTC(az.getUTCFullYear(), az.getUTCMonth() + 1, 1, 8, 0) + 7 * 3600e3).toISOString();   // 1st of next month, 8am Arizona
       var posts = [
+        post({ id: 'w0', kind: 'weekly', title: '[Two weeks ago: an earlier Weekly]', publish_at: new Date(new Date(lastMonday).getTime() - 7 * 864e5).toISOString(),
+          body: '[A line from that week.]\nShout-out: [first name] for [something kind].', heads_ups: '[A heads-up from that week.]', reminders: '', asked_did: '' }),
+        post({ id: 'w00', kind: 'weekly', title: '[Three weeks ago: the first Weekly]', publish_at: new Date(new Date(lastMonday).getTime() - 14 * 864e5).toISOString(),
+          body: '[A line from that week.]', heads_ups: '', reminders: '[A reminder from that week.]', asked_did: '' }),
         post({ id: 'w1', kind: 'weekly', title: 'Welcome to The Arete Room', publish_at: lastMonday,
           body: 'A warm hello from all of us. This is our weekly in touch.\nShout-out: a guest wrote that [first name] made her week.',
           heads_ups: 'Thursday evenings open Nov 12, 5 to 8pm.\n[A heads-up for the week ahead.]',
@@ -1823,6 +1885,15 @@
         });
         var open = db.polls.filter(function (x) { return x.status === 'open'; })[0];
         return { me: meOf(p), now: new Date().toISOString(), posts: out.map(function (x) { return pub(x, p.id); }), poll: open ? pollPub(open, p.id) : null, leaders: leadersList() };
+      },
+      earlier_weeklies: function (a) {
+        who(a.p_token); publishDue();
+        var now = Date.now();
+        return db.posts.filter(function (x) { return x.kind === 'weekly' && x.status === 'published' && new Date(x.publish_at).getTime() <= now; })
+          .sort(function (x, y) { return new Date(y.publish_at) - new Date(x.publish_at); }).slice(1, 13).map(function (x) {
+            return { id: x.id, kind: x.kind, title: x.title, body: x.body, heads_ups: x.heads_ups, reminders: x.reminders, asked_did: x.asked_did,
+              image_url: x.image_url, publish_at: x.publish_at };
+          });
       },
       tap: function (a) {
         var me = who(a.p_token);
@@ -2067,7 +2138,7 @@
       signInAs: function (name) {
         var p = db.people.filter(function (x) { return x.name === name && !x.removed; })[0];
         p.active = true; if (!p.pin) p.pin = '1234'; if (!p.key) p.key = 'demo-key-' + p.id.slice(2); save();
-        S.key = p.key; store.set('key', p.key); S.lead = freshLead();
+        S.key = p.key; store.set('key', p.key); S.lead = freshLead(); S.earlier = freshEarlier();
         S.noteSent = null;
         signedIn({ token: 'demo-token-' + p.id, me: meOf(p) });
       },
@@ -2077,8 +2148,8 @@
         signOutLocal(); S.key = p.key; S.demoPreview = true; gate();
       },
       reset: function () {
-        db = seed(); save(); store.del('noteDraft'); store.del('noteTo'); store.del('pushAsked'); store.del('pushOn');
-        S.noteDraft = ''; S.noteTo = { mode: 'all', ids: [] }; S.pushOn = false; S.spoken = {};
+        db = seed(); save(); store.del('noteDraft'); store.del('pushAsked'); store.del('pushOn');
+        S.noteDraft = ''; S.pushOn = false; S.spoken = {}; S.earlier = freshEarlier();
         this.signInAs('Sam');
       },
       autoStart: function () {
