@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Inner Smile &middot; Lavender's Client Education</title>
+<!-- Client education page, Socrates, 2026-11-19. Built only from what the library records. Held at v1: edit in place until a copy leaves the building. Sources live in the maker's notes, never on the page. Self-contained: no outside images, fonts or scripts. -->
+<style>
+:root{--plumd:#392D50;--plum:#5F4F82;--lav:#9684BC;--lavsoft:#EFEAF6;--lavline:#DED3EC;
+--gold:#B28C4A;--goldd:#967A3A;--beige:#F8F1E4;--ink:#3A3350;--mute:#7A7488;
+--sage:#4F6B48;--sagesoft:#E8F0E4;--gray:#F2F0F4;--cream:#FCFBF8;--card:#FFF;}
+*{box-sizing:border-box}html,body{margin:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Calibri,system-ui,sans-serif;color:var(--ink);background:var(--cream);line-height:1.6;font-size:17px;-webkit-font-smoothing:antialiased;}
+.wrap{max-width:720px;margin:0 auto;padding:24px 18px 48px;}
+.head{text-align:center;padding-bottom:12px;border-bottom:2px solid var(--gold);margin-bottom:16px;}
+.brand{font-family:Georgia,serif;font-style:italic;color:var(--plum);font-size:15px;letter-spacing:.4px;}
+.eyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--goldd);font-weight:700;margin-top:5px;}
+h1{font-family:Georgia,serif;font-style:italic;font-weight:600;color:var(--plum);font-size:34px;line-height:1.15;margin:6px 0 6px;}
+.stand{font-family:Georgia,serif;font-style:italic;color:var(--mute);font-size:16px;margin:0;}
+h2{font-family:Georgia,serif;font-weight:600;color:var(--plumd);font-size:23px;margin:4px 0 10px;}
+h3{font-size:16.5px;color:var(--plum);margin:14px 0 4px;}
+p{margin:0 0 11px;}
+ul,ol{margin:2px 0 12px;padding-left:22px;} li{margin:0 0 7px;}
+hr{border:0;border-top:1px solid var(--lavline);margin:26px 0 22px;}
+.callout{border-radius:12px;padding:12px 16px;margin:12px 0 14px;}
+.callout p:last-child{margin-bottom:0;}
+.lbl{display:block;font-size:11px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;margin-bottom:5px;}
+.c-lav{background:var(--lavsoft);} .c-lav .lbl{color:var(--plum);}
+.c-beige{background:var(--beige);} .c-beige .lbl{color:var(--goldd);}
+.c-sage{background:var(--sagesoft);} .c-sage .lbl{color:var(--sage);}
+.c-gray{background:var(--gray);}
+.quote{font-family:Georgia,serif;font-style:italic;font-size:18px;color:var(--plum);}
+figure{margin:6px 0 16px;background:var(--card);border:1px solid var(--lavline);border-radius:14px;padding:12px 12px 8px;}
+figure svg{display:block;width:100%;height:auto;}
+figcaption{font-size:13.5px;color:var(--mute);text-align:center;margin-top:6px;font-style:italic;}
+.steps{counter-reset:s;list-style:none;padding-left:0;}
+.steps li{counter-increment:s;position:relative;padding-left:40px;margin-bottom:11px;}
+.steps li::before{content:counter(s);position:absolute;left:0;top:1px;width:28px;height:28px;border-radius:50%;background:var(--plum);color:#fff;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;}
+.steps b{color:var(--plumd);}
+.organs{display:grid;grid-template-columns:1fr;gap:8px;margin:8px 0 14px;}
+.organ{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--lavline);border-radius:12px;padding:9px 13px;}
+.dot{flex:0 0 26px;height:26px;border-radius:50%;border:2px solid rgba(0,0,0,.12);}
+.organ .nm{font-weight:700;color:var(--plumd);}
+.organ .snd{margin-left:auto;font-family:Georgia,serif;font-style:italic;color:var(--plum);white-space:nowrap;}
+.when{display:grid;grid-template-columns:1fr;gap:9px;margin:8px 0 12px;}
+.w{background:var(--card);border:1px solid var(--lavline);border-radius:12px;padding:10px 14px;}
+.w h3{margin:0 0 3px;}
+.w p{margin:0;font-size:16px;}
+.ways{display:grid;grid-template-columns:1fr;gap:10px;margin:8px 0 12px;}
+.way{background:var(--card);border:1px solid var(--lavline);border-radius:12px;padding:10px 14px;}
+.way.first{background:var(--sagesoft);border-color:#cfdcc9;}
+.way h3{margin:0 0 3px;}
+.way.first h3{color:var(--sage);}
+.way p{margin:0;font-size:16px;}
+details{background:var(--card);border:1px solid var(--lavline);border-radius:12px;padding:9px 14px;margin:8px 0 12px;}
+details summary{cursor:pointer;font-weight:700;color:var(--plum);list-style:none;}
+details summary::-webkit-details-marker{display:none;}
+details summary::before{content:"+ ";color:var(--gold);font-weight:800;}
+details[open] summary::before{content:"\2212  ";}
+details[open] summary{margin-bottom:6px;}
+details p:last-child{margin-bottom:2px;}
+.actions{text-align:center;margin:18px 0 4px;}
+.btn{border:1px solid var(--plum);background:var(--plum);color:#fff;font-weight:600;font-size:14px;padding:9px 18px;border-radius:9px;cursor:pointer;font-family:inherit;}
+.legal{margin-top:18px;text-align:center;font-size:10.5px;line-height:1.45;color:var(--mute);}
+.legal .org{color:var(--plum);letter-spacing:.3px;margin-bottom:2px;}
+@media(min-width:700px){.when,.ways{grid-template-columns:1fr 1fr;} .way.first{grid-column:1 / -1;}}
+@page{size:letter;margin:0.45in 0.5in;}
+@media print{
+  body{background:#fff;font-size:11.5px;line-height:1.4;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .wrap{padding:0;max-width:100%;}
+  .actions{display:none;}
+  h1{font-size:26px;} h2{font-size:17px;} h3{font-size:12.5px;}
+  figure{max-width:78%;margin-left:auto;margin-right:auto;}
+  details{border:0;padding:2px 0;} details summary::before{content:"";}
+  details > *{display:block;}
+  .w p,.way p{font-size:11px;}
+  figure,.callout,.w,.way,.organ,details{break-inside:avoid;page-break-inside:avoid;}
+  .legal{font-size:7pt;margin-top:10px;}
+}
+</style></head>
+<body>
+<div class="wrap">
+
+  <div class="head">
+    <div class="brand">Lavender's &middot; Day Spa &amp; Wellness Club</div>
+    <div class="eyebrow">Client Education</div>
+    <h1>The Inner Smile</h1>
+    <p class="stand">A simple, free and very old practice: smiling into your own body with love and thanks</p>
+  </div>
+
+  <figure>
+    <svg viewBox="0 0 360 210" role="img" aria-label="A person sitting calmly with a soft smile, a warm glow around them and small lights inside the body">
+      <defs>
+        <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#F5E1A6" stop-opacity=".95"/>
+          <stop offset="60%" stop-color="#F8F1E4" stop-opacity=".6"/>
+          <stop offset="100%" stop-color="#FCFBF8" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <circle cx="180" cy="110" r="104" fill="url(#glow)"/>
+      <g stroke="#B28C4A" stroke-width="2" stroke-linecap="round" opacity=".55">
+        <line x1="180" y1="10" x2="180" y2="22"/><line x1="96" y1="44" x2="105" y2="53"/><line x1="264" y1="44" x2="255" y2="53"/>
+        <line x1="70" y1="110" x2="83" y2="110"/><line x1="290" y1="110" x2="277" y2="110"/>
+      </g>
+      <ellipse cx="180" cy="168" rx="66" ry="16" fill="#EFEAF6" stroke="#5F4F82" stroke-width="2"/>
+      <path d="M156 86 Q180 76 204 86 L214 150 Q180 162 146 150 Z" fill="#EFEAF6" stroke="#5F4F82" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M158 92 Q132 124 150 156" fill="none" stroke="#5F4F82" stroke-width="2" stroke-linecap="round"/>
+      <path d="M202 92 Q228 124 210 156" fill="none" stroke="#5F4F82" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="180" cy="56" r="24" fill="#F8F1E4" stroke="#5F4F82" stroke-width="2"/>
+      <path d="M168 53 q5 4 10 0 M182 53 q5 4 10 0" fill="none" stroke="#5F4F82" stroke-width="2" stroke-linecap="round"/>
+      <path d="M170 64 q10 9 20 0" fill="none" stroke="#5F4F82" stroke-width="2.2" stroke-linecap="round"/>
+      <path d="M180 124 C168 115 168 105 175 105 C178 105 180 108 180 110 C180 108 182 105 185 105 C192 105 192 115 180 124 Z" fill="#E8A3B4" stroke="#C0566B" stroke-width="1.5"/>
+      <g fill="#B28C4A">
+        <circle cx="163" cy="100" r="2.4"/><circle cx="196" cy="98" r="2.4"/><circle cx="170" cy="136" r="2.4"/><circle cx="192" cy="138" r="2.4"/>
+        <circle cx="180" cy="144" r="2"/><circle cx="160" cy="124" r="2"/><circle cx="200" cy="122" r="2"/><circle cx="150" cy="168" r="2.2"/><circle cx="210" cy="168" r="2.2"/><circle cx="180" cy="172" r="2.2"/>
+      </g>
+    </svg>
+    <figcaption>Smile, then send that smile inside.</figcaption>
+  </figure>
+
+  <div class="callout c-lav"><span class="lbl">In one breath</span>
+    <p>The inner smile is an old Taoist practice from China. You put a soft smile on your face, then turn it inward, into your organs and every one of your cells, and thank them. It's free. It can take about a minute. You can do it sitting quietly, in the car or waiting in line, with your eyes open or closed. Our teachers call it one of the simplest and most powerful things the ancient healers taught.</p>
+  </div>
+
+  <hr>
+
+  <h2>😊 What it is</h2>
+  <p>The inner smile is what it sounds like. You smile a soft, sincere smile, and then you bring that smile inside. You smile into your heart, your liver, your knees and your toes, and into every cell. As you go, you send each part love and appreciation, and you thank it for the work it does for you all day.</p>
+  <p>That's the whole practice. It sounds almost too simple, and our lead teacher says that was his first thought too. How could smiling into your organs change anything? Over years of study, he found it was the practice the old texts came back to again and again.</p>
+  <div class="callout c-beige">
+    <p class="quote">"How many times a day are you telling your body that you love yourself?"</p>
+    <p>Our teachers ask this often. For most of us, the honest answer is: not many. We spend our days looking outward. The inner smile brings the attention, and the gratitude, back inside.</p>
+  </div>
+
+  <hr>
+
+  <h2>🌿 Where it comes from</h2>
+  <p>The inner smile comes from Taoism, the old healing tradition of China. Tao is spelled T-A-O and said "dow." It means "the Way." Its energy practice is qigong, the slow movement and breath practice our lead teacher calls the oldest energy practice in the world. The Chinese kept careful written records, so these practices come to us in texts thousands of years old.</p>
+  <p>Taoist healing was built around one thing: cultivating love, the energy and feeling of love, inside the body. In the old days, children learned these practices young, the same way they learned how to eat and how to care for the body. The old teachers recommended the inner smile every day, often with qigong in the morning.</p>
+  <p>Our lead teacher has spent years studying with Taoist masters, including in Thailand. He kept asking them one question: of everything you have learned, what is the most powerful? The answer that came back, over and over, was the inner smile.</p>
+  <div class="callout c-lav"><span class="lbl">To go deeper</span>
+    <p>The book <b>The Inner Smile</b>, by Mantak Chia, walks through the practice in more detail. Our lead teacher recommends it and listens to it as an audiobook. It's short, and easy to listen to on a drive.</p>
+  </div>
+
+  <hr>
+
+  <h2>🧘 How to do it, step by step</h2>
+  <p>Here is the basic practice, from the toes up. Go slowly the first few times. Once you know it, it can take about a minute.</p>
+  <ol class="steps">
+    <li><b>Settle.</b> Sit comfortably, or stand, or lie down. Let your feet rest on the floor, or on the bare earth if you're outside. Relax your jaw. Notice any part of you that feels tight and let it soften.</li>
+    <li><b>Breathe.</b> Take a few slow, deep breaths through your nose.</li>
+    <li><b>Smile.</b> Put a small, sincere smile on your face, and let yourself feel it.</li>
+    <li><b>Start at your toes.</b> Bring your attention to the tips of your toes and smile into them. Thank them for being there, for helping you stand and walk.</li>
+    <li><b>Move up.</b> Your feet, ankles, calves and knees. Thank your knees for carrying you up and down the stairs. Then your thighs, hips and pelvis.</li>
+    <li><b>Into the middle.</b> Your belly and your digestion. Your liver, on the right side under your ribs. Your stomach and spleen, on the left. Your spine and your ribs.</li>
+    <li><b>Heart and lungs.</b> Smile into your heart and thank it for keeping you alive. Let it open. Smile into your lungs and thank them for every breath.</li>
+    <li><b>Up to your head.</b> Your throat, mouth and nose. Your brain and your eyes. Thank them for keeping you here and keeping you calm.</li>
+    <li><b>The whole body.</b> Now smile through your whole body at once, into every cell. Say thank you. Say I love you. Take a couple more slow breaths.</li>
+  </ol>
+
+  <figure>
+    <svg viewBox="0 0 360 340" role="img" aria-label="A standing figure with nine numbered points rising from the toes to the head, showing the order of the inner smile">
+      <g fill="#EFEAF6" stroke="#5F4F82" stroke-width="2" stroke-linejoin="round">
+        <rect x="88" y="300" width="20" height="12" rx="6"/><rect x="112" y="300" width="20" height="12" rx="6"/>
+        <path d="M92 178 L104 178 L106 302 L94 302 Z"/><path d="M116 178 L128 178 L126 302 L114 302 Z"/>
+        <path d="M84 70 Q110 60 136 70 L140 182 Q110 190 80 182 Z"/>
+        <path d="M84 74 Q66 120 72 166" fill="none" stroke-linecap="round"/><path d="M136 74 Q154 120 148 166" fill="none" stroke-linecap="round"/>
+        <rect x="104" y="56" width="12" height="12"/>
+        <circle cx="110" cy="38" r="19" fill="#F8F1E4"/>
+      </g>
+      <path d="M110 306 L110 14" fill="none" stroke="#B28C4A" stroke-width="2" stroke-dasharray="4 5"/>
+      <path d="M110 1 l-7 11 h14 Z" fill="#B28C4A"/>
+      <g stroke="#B9B3C6" stroke-width="1">
+        <line x1="118" y1="306" x2="196" y2="314"/><line x1="118" y1="290" x2="196" y2="288"/><line x1="118" y1="240" x2="196" y2="250"/>
+        <line x1="118" y1="190" x2="196" y2="212"/><line x1="118" y1="160" x2="196" y2="174"/><line x1="118" y1="134" x2="196" y2="136"/>
+        <line x1="118" y1="104" x2="196" y2="98"/><line x1="118" y1="62" x2="196" y2="62"/><line x1="118" y1="38" x2="196" y2="28"/>
+      </g>
+      <g fill="#5F4F82">
+        <circle cx="110" cy="306" r="8"/><circle cx="110" cy="290" r="8"/><circle cx="110" cy="240" r="8"/><circle cx="110" cy="190" r="8"/>
+        <circle cx="110" cy="160" r="8"/><circle cx="110" cy="134" r="8"/><circle cx="110" cy="104" r="8"/><circle cx="110" cy="62" r="8"/><circle cx="110" cy="38" r="8" fill="#B28C4A"/>
+      </g>
+      <g fill="#fff" font-size="9.5" font-weight="700" text-anchor="middle" font-family="Calibri,system-ui,sans-serif">
+        <text x="110" y="309.5">1</text><text x="110" y="293.5">2</text><text x="110" y="243.5">3</text><text x="110" y="193.5">4</text>
+        <text x="110" y="163.5">5</text><text x="110" y="137.5">6</text><text x="110" y="107.5">7</text><text x="110" y="65.5">8</text><text x="110" y="41.5">9</text>
+      </g>
+      <g fill="#3A3350" font-size="13" font-family="Calibri,system-ui,sans-serif">
+        <text x="200" y="318">Toes and feet</text><text x="200" y="292">Ankles</text><text x="200" y="254">Calves and knees</text>
+        <text x="200" y="216">Thighs, hips, pelvis</text><text x="200" y="178">Belly and digestion</text><text x="200" y="140">Liver, stomach, spleen</text>
+        <text x="200" y="102">Heart and lungs</text><text x="200" y="66">Throat, mouth, nose</text><text x="200" y="32">Brain, eyes, every cell</text>
+      </g>
+    </svg>
+    <figcaption>Start at the toes and smile your way up.</figcaption>
+  </figure>
+
+  <details>
+    <summary>Adding light</summary>
+    <p>Our teachers add a picture of light. As you smile, imagine a soft white-golden light coming in and bathing every cell. Or picture each cell holding a tiny, spinning ball of white-golden light. You can add a little pink, the color they give to love. They say white and gold are always a good choice.</p>
+  </details>
+  <details>
+    <summary>Eyes open or closed?</summary>
+    <p>Either. Many people close their eyes when they are learning. Our teachers say you don't need them closed, which is why you can do the inner smile while driving or standing in line. When you add the breathing out (the organ sounds, below), keep your eyes open on the out-breath.</p>
+  </details>
+
+  <hr>
+
+  <h2>🫁 The five organs: smile, color and sound</h2>
+  <p>Our teachers often pair the inner smile with the Taoist five organ sounds. Our lead teacher does them every morning. In the Taoist view, five organs run and balance the body: the heart, the lungs, the liver, the kidneys, and the spleen with the stomach. Each one has its own color and its own sound.</p>
+  <p>For each organ:</p>
+  <ul>
+    <li>Breathe its color in through your nose, into the organ, like a soft mist.</li>
+    <li>Smile into the organ and thank it. Forgive, and let go of what it has been holding.</li>
+    <li>Breathe out slowly, making the organ's sound, with your eyes open.</li>
+  </ul>
+
+  <figure>
+    <svg viewBox="0 0 360 300" role="img" aria-label="Five circles in a ring for the heart, spleen and stomach, lungs, kidneys and liver, each with its color and sound, and a smile in the middle">
+      <g font-family="Calibri,system-ui,sans-serif" text-anchor="middle">
+        <circle cx="180" cy="150" r="30" fill="#F8F1E4" stroke="#B28C4A" stroke-width="2"/>
+        <path d="M168 146 q12 12 24 0" fill="none" stroke="#B28C4A" stroke-width="2.5" stroke-linecap="round"/>
+        <g stroke="#DED3EC" stroke-width="2" fill="none">
+          <line x1="180" y1="90" x2="180" y2="120"/><line x1="235" y1="131" x2="208" y2="140"/><line x1="216" y1="199" x2="198" y2="174"/>
+          <line x1="144" y1="199" x2="162" y2="174"/><line x1="125" y1="131" x2="152" y2="140"/>
+        </g>
+        <circle cx="180" cy="50" r="42" fill="#F4C6CF" stroke="#C0566B" stroke-width="2"/>
+        <text x="180" y="44" font-size="13.5" font-weight="700" fill="#392D50">Heart</text>
+        <text x="180" y="60" font-size="11" fill="#3A3350">red-pink light</text>
+        <text x="180" y="76" font-size="13" font-style="italic" fill="#5F4F82">haaa</text>
+        <circle cx="275" cy="119" r="42" fill="#F5E1A6" stroke="#B28C4A" stroke-width="2"/>
+        <text x="275" y="107" font-size="13" font-weight="700" fill="#392D50">Spleen &amp;</text>
+        <text x="275" y="121" font-size="13" font-weight="700" fill="#392D50">stomach</text>
+        <text x="275" y="135" font-size="11" fill="#3A3350">golden yellow</text>
+        <text x="275" y="150" font-size="13" font-style="italic" fill="#5F4F82">whooo</text>
+        <circle cx="239" cy="235" r="42" fill="#FFFFFF" stroke="#9A93AA" stroke-width="2"/>
+        <text x="239" y="229" font-size="13.5" font-weight="700" fill="#392D50">Lungs</text>
+        <text x="239" y="245" font-size="11" fill="#3A3350">white light</text>
+        <text x="239" y="261" font-size="13" font-style="italic" fill="#5F4F82">sss</text>
+        <circle cx="121" cy="235" r="42" fill="#CFE3F2" stroke="#4F7FA6" stroke-width="2"/>
+        <text x="121" y="229" font-size="13.5" font-weight="700" fill="#392D50">Kidneys</text>
+        <text x="121" y="245" font-size="11" fill="#3A3350">ice-blue light</text>
+        <text x="121" y="261" font-size="13" font-style="italic" fill="#5F4F82">chooo</text>
+        <circle cx="85" cy="119" r="42" fill="#CFE5C6" stroke="#5E8A4F" stroke-width="2"/>
+        <text x="85" y="113" font-size="13.5" font-weight="700" fill="#392D50">Liver</text>
+        <text x="85" y="129" font-size="11" fill="#3A3350">green light</text>
+        <text x="85" y="145" font-size="13" font-style="italic" fill="#5F4F82">shhh</text>
+      </g>
+    </svg>
+    <figcaption>The five organs, each with its color and sound, and the smile at the center of them all.</figcaption>
+  </figure>
+
+  <div class="organs">
+    <div class="organ"><span class="dot" style="background:#F4C6CF"></span><span><span class="nm">Heart</span> &middot; red or reddish-pink light, with gold</span><span class="snd">"haaa"</span></div>
+    <div class="organ"><span class="dot" style="background:#FFFFFF"></span><span><span class="nm">Lungs</span> &middot; white light, with golden specks</span><span class="snd">"sss," like a snake</span></div>
+    <div class="organ"><span class="dot" style="background:#CFE5C6"></span><span><span class="nm">Liver</span> &middot; green light, like a cleansing mist</span><span class="snd">"shhh"</span></div>
+    <div class="organ"><span class="dot" style="background:#CFE3F2"></span><span><span class="nm">Kidneys</span> &middot; ice-blue light, cool</span><span class="snd">"chooo"</span></div>
+    <div class="organ"><span class="dot" style="background:#F5E1A6"></span><span><span class="nm">Spleen and stomach</span> &middot; golden-yellow light</span><span class="snd">"whooo"</span></div>
+  </div>
+  <p>Our teachers say the kidneys tend to run hot, so for them they picture breathing in a cold blue fog, like a foggy morning, cooling the kidneys down.</p>
+
+  <figure>
+    <svg viewBox="0 0 360 250" role="img" aria-label="A figure breathing golden light in on one side and letting gray smoke out through the eyes and down through the feet into the earth on the other">
+      <rect x="0" y="222" width="360" height="28" rx="6" fill="#E8F0E4"/>
+      <g fill="none" stroke="#B28C4A" stroke-width="2.5" stroke-linecap="round">
+        <path d="M24 70 Q90 70 150 100"/><path d="M24 110 Q90 108 150 112"/><path d="M24 150 Q90 148 150 124"/>
+      </g>
+      <g fill="#B28C4A"><path d="M150 100 l-10 -1 l5 -8 Z"/><path d="M152 112 l-9 -5 l0 10 Z"/><path d="M150 124 l-10 1 l5 8 Z"/></g>
+      <g fill="#F5E1A6"><circle cx="50" cy="70" r="4"/><circle cx="80" cy="109" r="4"/><circle cx="60" cy="149" r="4"/><circle cx="110" cy="80" r="3"/><circle cx="115" cy="138" r="3"/></g>
+      <g fill="#EFEAF6" stroke="#5F4F82" stroke-width="2" stroke-linejoin="round">
+        <path d="M160 76 Q180 68 200 76 L204 160 Q180 166 156 160 Z"/>
+        <path d="M164 160 L176 160 L176 216 L164 216 Z"/><path d="M184 160 L196 160 L196 216 L184 216 Z"/>
+        <circle cx="180" cy="50" r="20" fill="#F8F1E4"/>
+      </g>
+      <circle cx="173" cy="47" r="2.2" fill="#5F4F82"/><circle cx="187" cy="47" r="2.2" fill="#5F4F82"/>
+      <path d="M173 57 q7 6 14 0" fill="none" stroke="#5F4F82" stroke-width="1.8" stroke-linecap="round"/>
+      <path d="M180 112 C171 105 171 98 176 98 C178 98 180 100 180 101 C180 100 182 98 184 98 C189 98 189 105 180 112 Z" fill="#E8A3B4"/>
+      <g fill="none" stroke="#9A93AA" stroke-width="2.2" stroke-linecap="round" opacity=".85">
+        <path d="M206 46 q14 -8 26 0 t26 0 t26 0"/><path d="M206 60 q14 8 26 0 t26 0"/>
+        <path d="M170 222 q-6 8 0 14 t0 10"/><path d="M190 222 q6 8 0 14 t0 10"/>
+      </g>
+      <g font-family="Calibri,system-ui,sans-serif" font-size="13">
+        <text x="20" y="40" font-weight="700" fill="#967A3A">BREATHE IN</text>
+        <text x="20" y="185" fill="#3A3350">Light in, smile,</text><text x="20" y="201" fill="#3A3350">thank the organ</text>
+        <text x="236" y="96" font-weight="700" fill="#5F4F82">BREATHE OUT</text>
+        <text x="236" y="114" fill="#3A3350">Eyes open,</text><text x="236" y="130" fill="#3A3350">make the sound,</text><text x="236" y="146" fill="#3A3350">let it go into</text><text x="236" y="162" fill="#3A3350">the earth</text>
+      </g>
+    </svg>
+    <figcaption>Breathe the light in. Let the old tension out.</figcaption>
+  </figure>
+
+  <details>
+    <summary>Where the out-breath goes</summary>
+    <p>Our teachers say tension and old emotion leave through the eyes and the breath, which is why the eyes stay open as you breathe out. Some picture the out-breath as a gray smoke leaving through the eyes and mouth, or out the top of the head, or down through the soles of the feet into the earth, where the earth takes it.</p>
+  </details>
+
+  <hr>
+
+  <h2>🕰️ When to do it</h2>
+  <p>Any time at all. Our teachers say the secret is using time you already have. These are the moments they name.</p>
+
+  <figure>
+    <svg viewBox="0 0 360 330" role="img" aria-label="A day from morning to bedtime with seven moments for the inner smile: morning, food and water, the car, waiting in line, upset, low energy and bedtime">
+      <line x1="40" y1="24" x2="40" y2="306" stroke="#DED3EC" stroke-width="3"/>
+      <g font-family="Calibri,system-ui,sans-serif" font-size="14" fill="#3A3350">
+        <circle cx="40" cy="24" r="17" fill="#F5E1A6" stroke="#B28C4A" stroke-width="2"/><circle cx="40" cy="24" r="7" fill="#B28C4A"/>
+        <text x="72" y="21" font-weight="700" fill="#392D50">Morning</text><text x="72" y="37" font-size="12.5" fill="#7A7488">before the phone, outside if you can</text>
+        <circle cx="40" cy="71" r="17" fill="#fff" stroke="#5F4F82" stroke-width="2"/><path d="M33 63 h14 l-2 15 h-10 Z" fill="#CFE3F2" stroke="#4F7FA6" stroke-width="1.5"/>
+        <text x="72" y="68" font-weight="700" fill="#392D50">Before you eat or drink</text><text x="72" y="84" font-size="12.5" fill="#7A7488">calm and grateful first</text>
+        <circle cx="40" cy="118" r="17" fill="#fff" stroke="#5F4F82" stroke-width="2"/><rect x="29" y="112" width="22" height="9" rx="3" fill="#9684BC"/><circle cx="34" cy="123" r="3" fill="#392D50"/><circle cx="46" cy="123" r="3" fill="#392D50"/>
+        <text x="72" y="115" font-weight="700" fill="#392D50">In the car</text><text x="72" y="131" font-size="12.5" fill="#7A7488">eyes open, about 10 minutes</text>
+        <circle cx="40" cy="165" r="17" fill="#fff" stroke="#5F4F82" stroke-width="2"/><circle cx="32" cy="163" r="3.5" fill="#9684BC"/><circle cx="40" cy="163" r="3.5" fill="#9684BC"/><circle cx="48" cy="163" r="3.5" fill="#9684BC"/><rect x="29" y="168" width="22" height="4" rx="2" fill="#9684BC"/>
+        <text x="72" y="162" font-weight="700" fill="#392D50">Waiting in line</text><text x="72" y="178" font-size="12.5" fill="#7A7488">turn a wait into a few minutes of care</text>
+        <circle cx="40" cy="212" r="17" fill="#fff" stroke="#5F4F82" stroke-width="2"/><path d="M30 215 q0 -8 8 -8 q2 -6 9 -3 q6 0 5 7 q4 1 3 5 Z" fill="#DED3EC" stroke="#9A93AA" stroke-width="1.3"/>
+        <text x="72" y="209" font-weight="700" fill="#392D50">When you're upset</text><text x="72" y="225" font-size="12.5" fill="#7A7488">breathe, smile into where you feel it</text>
+        <circle cx="40" cy="259" r="17" fill="#fff" stroke="#5F4F82" stroke-width="2"/><rect x="29" y="253" width="20" height="12" rx="2" fill="none" stroke="#5F4F82" stroke-width="1.6"/><rect x="49" y="257" width="3" height="4" fill="#5F4F82"/><rect x="31" y="255" width="5" height="8" fill="#B28C4A"/>
+        <text x="72" y="256" font-weight="700" fill="#392D50">When your energy dips</text><text x="72" y="272" font-size="12.5" fill="#7A7488">sit down and begin with the smile</text>
+        <circle cx="40" cy="306" r="17" fill="#392D50" stroke="#5F4F82" stroke-width="2"/><path d="M45 297 a10 10 0 1 0 2 17 a8 8 0 1 1 -2 -17 Z" fill="#F5E1A6"/>
+        <text x="72" y="303" font-weight="700" fill="#392D50">At bedtime</text><text x="72" y="319" font-size="12.5" fill="#7A7488">hands over the heart, forgive, give thanks</text>
+      </g>
+    </svg>
+    <figcaption>Seven moments in an ordinary day.</figcaption>
+  </figure>
+
+  <div class="when">
+    <div class="w"><h3>Morning</h3><p>Before you reach for your phone, give thanks that you're alive. Begin the day with a smile and gratitude. If you can, step outside, stand barefoot on the earth or lean back against a tree, and do the organ sounds with the inner smile.</p></div>
+    <div class="w"><h3>Before you eat or drink</h3><p>Take a few calm breaths and do the inner smile, so you come to your meal or your glass of water calm and grateful. Our teachers suggest smiling into your cells, with thanks, before you sip.</p></div>
+    <div class="w"><h3>In the car</h3><p>"Why not spend 10 minutes in the car doing a healing session?" Eyes open, hands on the wheel, smiling into your body as you drive.</p></div>
+    <div class="w"><h3>Waiting in line</h3><p>Time that would be lost becomes a few quiet minutes: a little grounding, some light breathed in, the inner smile.</p></div>
+    <div class="w"><h3>When you're upset</h3><p>First ask yourself why you're feeling this. Then take some deep breaths and smile right into the place you feel it, often the heart. Our lead teacher says deep breathing and the inner smile, even for five minutes, is his surest way back to calm. It's hard to stay angry with a smile on your face.</p></div>
+    <div class="w"><h3>When your energy dips</h3><p>Sit down and start with the inner smile, bringing energy back into your cells.</p></div>
+    <div class="w"><h3>At bedtime</h3><p>Hold your hands over your heart. Forgive yourself for anything you did, and forgive others. Smile into your heart with gratitude and love, and picture a white-golden fog of pure love, with a little pink in it, moving through every cell.</p></div>
+  </div>
+
+  <hr>
+
+  <h2>⏱️ How long</h2>
+  <figure>
+    <svg viewBox="0 0 360 150" role="img" aria-label="Three clock faces: about one minute for a quick inner smile, five to ten minutes for a quiet sit, and about ten minutes in the car">
+      <g font-family="Calibri,system-ui,sans-serif" text-anchor="middle">
+        <circle cx="60" cy="60" r="42" fill="#fff" stroke="#5F4F82" stroke-width="2"/>
+        <path d="M60 60 L60 18 A42 42 0 0 1 64.4 18.2 Z" fill="#B28C4A"/>
+        <circle cx="60" cy="60" r="3" fill="#5F4F82"/>
+        <text x="60" y="122" font-size="14" font-weight="700" fill="#392D50">About 1 minute</text>
+        <text x="60" y="139" font-size="12" fill="#7A7488">once you know it</text>
+        <circle cx="180" cy="60" r="42" fill="#fff" stroke="#5F4F82" stroke-width="2"/>
+        <path d="M180 60 L180 18 A42 42 0 0 1 216.4 39 Z" fill="#B28C4A"/>
+        <path d="M180 60 L201 23.6 A42 42 0 0 1 216.4 39 Z" fill="#F5E1A6"/>
+        <circle cx="180" cy="60" r="3" fill="#5F4F82"/>
+        <text x="180" y="122" font-size="14" font-weight="700" fill="#392D50">5 to 10 minutes</text>
+        <text x="180" y="139" font-size="12" fill="#7A7488">a quiet sit</text>
+        <circle cx="300" cy="60" r="42" fill="#fff" stroke="#5F4F82" stroke-width="2"/>
+        <path d="M300 60 L300 18 A42 42 0 0 1 336.4 39 Z" fill="#B28C4A"/>
+        <circle cx="300" cy="60" r="3" fill="#5F4F82"/>
+        <text x="300" y="122" font-size="14" font-weight="700" fill="#392D50">About 10 minutes</text>
+        <text x="300" y="139" font-size="12" fill="#7A7488">on a drive</text>
+      </g>
+    </svg>
+  </figure>
+  <p>About a minute, once you know the way up from your toes. Five to ten minutes in a quiet spot when you want to go slower. Ten minutes in the car. Our teachers say it belongs in every day, and that it's a practice for life, like cleansing. It isn't something you finish.</p>
+
+  <hr>
+
+  <h2>💞 Ways to go further</h2>
+  <div class="ways">
+    <div class="way"><h3>Smile outward too</h3><p>Walk through your day smiling at people: at the store, in the airport, at the front desk. Look them in the eye. Most will smile back.</p></div>
+    <div class="way"><h3>With a partner</h3><p>Sit facing each other, hold hands, and do the inner smile together, smiling love, peace and joy into your cells.</p></div>
+    <div class="way"><h3>In a group</h3><p>Our lead teacher has guided hundreds of people through it at once, and says a group smiling inward together is very powerful.</p></div>
+    <div class="way"><h3>With your hands</h3><p>Rub your palms together until they feel warm. Lay them over your heart or your belly. Breathe light in under your hands and smile into that place.</p></div>
+    <div class="way"><h3>With the earth</h3><p>Ground outside: barefoot, lying on the grass, or leaning back against a tree, smiling inward as you rest there.</p></div>
+    <div class="way"><h3>When you're hungry between meals</h3><p>Our lead teacher breathes a golden-yellow light into the stomach and spleen with the inner smile, picturing a ball of that light filling the stomach. He uses it to ease hunger, and our teachers suggest it during fasting.</p></div>
+  </div>
+  <details>
+    <summary>A deeper practice that begins with the smile</summary>
+    <p>A Taoist breath practice called the microcosmic orbit also starts with the inner smile. You begin with the smile at the lower belly, about three finger-widths below the navel. As you breathe in, you draw the energy from the base of the body up the back of the spine to the crown of the head. As you breathe out, you let it flow down the front of the body to the belly again. The tongue rests on the roof of the mouth, just behind the front teeth, to join the circle. It takes some practice to learn.</p>
+  </details>
+
+  <hr>
+
+  <h2>💧 Your body is listening</h2>
+  <p>Our teachers often share a well-known water study. Water was looked at under a microscope before and after a group offered a prayer into it, and again after kind or harsh words were written on its container. After the prayer and the words "thank you," the water formed ordered, beautiful crystals. After the harsh words, it did not. Our teachers point out that your body is mostly water, so the thoughts and words you turn toward yourself matter.</p>
+  <p>That's why they suggest the inner smile around food and water, and kind words in general. Speak to yourself, and to others, in ways that lift you up.</p>
+
+  <hr>
+
+  <h2>✨ What our teachers say it supports</h2>
+  <p>Our teachers describe the inner smile as a way to:</p>
+  <ul>
+    <li>help the nervous system relax and settle into its calm, rest-and-repair state</li>
+    <li>bring emotions back into balance, and let stored emotions go</li>
+    <li>wake up the body's own healing energy</li>
+    <li>support healthy blood flow and a strong immune system</li>
+    <li>lift your energy and your mood</li>
+    <li>reconnect body, mind and spirit</li>
+  </ul>
+  <p>At first you may not feel much. That's normal. Our teachers say the feeling grows with practice, until you can start to feel your cells, even in the tips of your toes. Like everything we teach, it's one piece of the whole, and small steps taken every day add up.</p>
+
+  <hr>
+
+  <h2>🌱 Ways to begin</h2>
+  <div class="ways">
+    <div class="way first"><h3>1 &middot; Start with cleansing</h3><p>In our approach, cleansing always comes first. A body carrying less of a toxic load has more room to heal. As you cleanse, especially the liver, old emotions can come up to be released. Our teachers say to meet them with forgiveness, gratitude and love, and the inner smile is a gentle way to do that. Ask us about the cleanses we guide. We've done them ourselves, and we'll walk with you through each one.</p></div>
+    <div class="way"><h3>2 &middot; Win your mornings</h3><p>One minute of the inner smile before you reach for your phone. As our lead teacher puts it, "If you change your mornings, you change your life."</p></div>
+    <div class="way"><h3>3 &middot; Pick one anchor</h3><p>The drive in, the first sip of water, a wait in line. Tie the inner smile to one moment you already have every day.</p></div>
+    <div class="way"><h3>4 &middot; Add the organ sounds</h3><p>Once the smile feels natural, add the five colors and sounds, one organ at a time if you like.</p></div>
+    <div class="way"><h3>5 &middot; One step at a time</h3><p>Picture a long staircase and climb one step today. You don't have to do everything at once.</p></div>
+  </div>
+
+  <div class="callout c-sage"><span class="lbl">Remember</span>
+    <p>You are the healer within. The inner smile is one of the simplest ways to look inward and say thank you to the body that carries you every day.</p>
+  </div>
+
+  <div class="actions"><button class="btn" onclick="window.print()">Print this page</button></div>
+  <script>window.addEventListener("beforeprint",function(){document.querySelectorAll("details").forEach(function(d){d.open=true;});});</script>
+
+  <!-- LAVENDER'S FOOTER STANDARD v1 (Hera, 2026-11-17): one block, very bottom, small type, no box. Holds the care disclaimer and the AI note. -->
+  <footer class="legal">
+    <div class="org">LAVENDER'S &middot; DAY SPA &middot; MASSAGE AND WELLNESS CLUB &middot; SUITE 30 &middot; 623&middot;584&middot;6680 &middot; lavendersdayspas.com</div>
+    <div>For education only, not medical advice. Not meant to diagnose, treat, cure or prevent any disease. Talk with your healthcare provider before making changes. Prepared with AI help, signed off by our team. &middot; The Inner Smile &middot; Updated 19 November 2026</div>
+  </footer>
+</div>
+</body></html>
