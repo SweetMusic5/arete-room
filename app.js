@@ -738,7 +738,7 @@
   function lineList(ls) {
     return '<ul class="lines">' + ls.map(function (l) {
       var m = l.match(/^\s*shout[- ]?out:\s*(.*)$/i);
-      return m ? '<li class="shout"><span class="shout-label">Shout-out:</span> ' + escLink(m[1]) + '</li>' : '<li>' + escLink(l) + '</li>';
+      return m ? '<li class="shout"><span class="shout-label">Shout-out:</span> ' + escLink(m[1]) + '</li>' : '<li>' + escLink(l.replace(/^[•·▪◦-]\s+/, '')) + '</li>';
     }).join('') + '</ul>';
   }
   function weeklyParts(p) {
@@ -1181,7 +1181,7 @@
       if (l.head) { if (inList) { h += '</ul>'; inList = false; } h += '<h4 class="fold-head">' + esc(l.head) + '</h4>'; }
       if (!inList) { h += '<ul class="lines">'; inList = true; }
       var m = l.text.match(/^\s*shout[- ]?out:\s*(.*)$/i);
-      h += m ? '<li class="shout"><span class="shout-label">Shout-out:</span> ' + escLink(m[1]) + '</li>' : '<li>' + escLink(l.text) + '</li>';
+      h += m ? '<li class="shout"><span class="shout-label">Shout-out:</span> ' + escLink(m[1]) + '</li>' : '<li>' + escLink(l.text.replace(/^[•·▪◦-]\s+/, '')) + '</li>';   // 2026-11-19: a line that already starts with a bullet doesn't get a second one
     });
     if (inList) h += '</ul>';
     var more = all.length > 2;
