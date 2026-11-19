@@ -1,0 +1,6 @@
+{
+  "about": "The Learn shelf in The Arete Room. One guide per line, newest at the top. url is the guide's file in this learn/ folder.",
+  "guides": [
+    { "title": "The Inner Smile", "line": "A free, one-minute practice: put on a soft smile, then send it inside with thanks.", "url": "learn/inner-smile.html", "added": "2026-11-19" }
+  ]
+}
