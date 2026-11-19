@@ -10,12 +10,13 @@
   var VAPID = (CFG.VAPID_PUBLIC_KEY && !/YOUR_/.test(CFG.VAPID_PUBLIC_KEY)) ? CFG.VAPID_PUBLIC_KEY : null;
   var TZ = 'America/Phoenix';             // Arizona: no daylight saving, always UTC-7
   var PREFIX = DEMO ? 'arete-demo:' : 'arete:';
+  var NOTES_HINT = 'Tap Reply to answer privately: only the person who wrote it sees your reply.';
   var MIND_HELP = 'Suggestions, questions, anything at all. About work, wellness, or how you\'re doing. The leadership team will see it.';
   var WHY_LINE = 'The passion and the purpose behind what we do.';
   // Alerts: tell, don't ask (Tiffany, 2026-11-18: "just make it so they can get alerts")
   var PUSH_HEAD = 'Turn alerts on';
   var PUSH_LINE = 'Get a note on your phone every Monday when the new Weekly is out.';
-  var KIND_NAMES = { weekly: 'The Weekly', why: 'The Why', try: "This Month's Share", meetup: 'Meetup' };
+  var KIND_NAMES = { weekly: 'The Weekly', why: 'The Why', try: "This Week's Share", meetup: 'Meetup' };
   var TRY_LABELS = ['Mental', 'Physical', 'Emotional', 'State'];
   var WEEKLY_PARTS = [['heads_ups', 'Heads-ups'], ['reminders', 'Reminders'], ['asked_did', 'You asked, we did']];
 
@@ -177,7 +178,8 @@
   function freshLead() {
     return { sub: 'posts', notes: null, posts: null, people: null, meet: null, nextSlot: null, showHandled: false, open: {}, who: {},
       approving: null, approveAt: '', form: null, pollForm: null, meetForm: { at: '', body: '' }, addName: '', addRole: 'team',
-      newLink: null, loading: false, confirm: null, late: null, unanswered: 0, unfold: {}, looks: null, lookText: {} };
+      newLink: null, loading: false, confirm: null, late: null, unanswered: 0, unfold: {}, looks: null, lookText: {},
+      replyTo: null, replyText: {} };
   }
   // Earlier Weeklies (bottom of The Weekly): closed until tapped, loaded fresh each time it opens.
   function freshEarlier() { return { open: false, loading: false, list: null, openId: null }; }
@@ -205,6 +207,9 @@
     pushOn: !!store.get('pushOn'),
     pushHome: false,                      // iPhone Safari: the Home Screen steps are open on the alerts card
     earlier: freshEarlier(),
+    replies: null,                        // "Replies to you": my own notes that have a private reply (my_replies)
+    newReplies: {},                       // reply ids shown as New on this visit to Talk to us
+    repliesAll: false,
     lead: freshLead()
   };
   store.del('noteTo');                    // "Who should see this?" is gone (2026-11-18): every note goes to the whole leadership team
@@ -251,14 +256,15 @@
     name_taken: 'Someone here already has that name. Add a last initial.',
     no_such_person: 'That person is no longer here.',
     too_long: 'That is a little long. Please shorten it.',
-    look_closed: 'That one has gone out already, or it is back with Tiffany.'
+    look_closed: 'That one has gone out already, or it is back with Tiffany.',
+    note_not_found: 'That note is no longer here.'
   };
   function handleErr(e) {
     var code = (e && e.code) || 'error';
     if (code === 'not_signed_in') { signOutLocal(); gate(); return; }
     toast(FRIENDLY[code] || 'Something went wrong. Please try again.');
   }
-  function signOutLocal() { S.token = null; store.del('token'); store.del('cache'); S.me = null; S.earlier = freshEarlier(); }
+  function signOutLocal() { S.token = null; store.del('token'); store.del('cache'); S.me = null; S.earlier = freshEarlier(); S.replies = null; S.newReplies = {}; S.repliesAll = false; }
 
   // ------------------------------------------------------------------
   // Start-up and sign-in
@@ -301,8 +307,33 @@
       S.me = r.me; S.posts = r.posts || []; S.poll = r.poll || null; S.leaders = r.leaders || [];
       if (S.tab === 'lead' && S.me.role !== 'leader') S.tab = 'home';
       saveCache();
+      loadReplies();
       if (S.me.role === 'leader') loadLead(true);
     });
+  }
+
+  // "Replies to you" (2026-11-18): a private reply from a leader to one of my notes. Only my own
+  // notes come back (the database decides). Quiet on failure: it is tried again on the next refresh.
+  function loadReplies() {
+    var tok = S.token;
+    return rpc('my_replies', { p_token: tok }).then(function (r) {
+      if (tok !== S.token) return;
+      S.replies = r || [];
+      S.replies.forEach(function (n) { (n.replies || []).forEach(function (x) { if (x.new) S.newReplies[x.id] = true; }); });
+      if (S.tab === 'talk') markRepliesSeen();
+      softRender();
+    }, function () { /* offline, or the database is not updated yet */ });
+  }
+  function unseenReplies() {
+    var c = 0;
+    (S.replies || []).forEach(function (n) { (n.replies || []).forEach(function (x) { if (x.new) c++; }); });
+    return c;
+  }
+  // Seen once they are on screen: the tab badge clears now; the New marks stay until they leave the page.
+  function markRepliesSeen() {
+    if (!unseenReplies()) return;
+    S.replies.forEach(function (n) { (n.replies || []).forEach(function (x) { x.new = false; }); });
+    rpc('mark_replies_seen', { p_token: S.token }).catch(function () { /* marked again next time */ });
   }
 
   function showApp() {
@@ -432,6 +463,7 @@
   }
   function signedIn(r) {
     S.token = r.token; S.me = r.me; S.demoPreview = false; S.signedOut = false;
+    S.replies = null; S.newReplies = {}; S.repliesAll = false;
     store.set('token', r.token); store.set('tokenKey', S.key);
     S.tab = 'home';
     loadMain().then(showApp, handleErr);
@@ -688,10 +720,12 @@
     var looks = isLeader && !isApprover() ? lookWaiting() : 0;          // JJ, Kade, Zoey: their notes + what waits for their look
     var count = unread + looks;
     var label = looks ? count + ' waiting for you' : unread + ' new notes';
+    var rep = S.tab === 'talk' ? 0 : unseenReplies();
     return '<nav class="tabs" aria-label="Main"><div class="row">' + tabs.map(function (t) {
       return '<button type="button" class="tab" data-act="tab" data-tab="' + t[0] + '" id="tab-' + t[0] + '"' + (S.tab === t[0] ? ' aria-current="page"' : '') + '>' +
         icon(t[2]) + '<span>' + t[1] + '</span>' +
-        (t[0] === 'lead' && count ? '<span class="badge" aria-label="' + label + '">' + count + '</span>' : '') + '</button>';
+        (t[0] === 'lead' && count ? '<span class="badge" aria-label="' + label + '">' + count + '</span>' : '') +
+        (t[0] === 'talk' && rep ? '<span class="badge" aria-label="' + rep + (rep === 1 ? ' new reply' : ' new replies') + '">' + rep + '</span>' : '') + '</button>';
     }).join('') + '</div></nav>';
   }
 
@@ -809,6 +843,7 @@
       h += '<article class="card"><p class="kicker">' + icon('calendar', 'sm') + 'Team Lab Meetup</p><p class="empty">The next meetup will show here.</p></article>';
     }
 
+    h += repliesBlock();
     h += '<section class="card mind" aria-labelledby="mind-title">';
     if (S.noteSent) {
       h += '<div class="thanks" role="status"><div class="check">' + icon('check') + '</div>' +
@@ -830,6 +865,31 @@
     return h;
   }
 
+  // "Replies to you": each of my notes that has a reply, the reply under it. Only when there is one.
+  function repliesBlock() {
+    var list = S.replies || [];
+    if (!list.length) return '';
+    var shown = S.repliesAll ? list : list.slice(0, 3);
+    var h = '<section class="card replies" aria-labelledby="replies-title"><h3 id="replies-title">Replies to you</h3>' +
+      '<p class="hint">Only you see these.</p>';
+    shown.forEach(function (n) {
+      h += '<div class="reply-thread" id="thread-' + esc(n.id) + '"><p class="your-note"><span class="meta">Your note \u00b7 ' + esc(fmtShort(n.created_at)) + '</span>' +
+        '<span class="your-note-body">' + esc(n.body) + '</span></p>';
+      (n.replies || []).forEach(function (r) {
+        var isNew = !!(S.newReplies[r.id] || r.new);
+        h += '<div class="reply' + (isNew ? ' new' : '') + '" id="reply-' + esc(r.id) + '"><p class="reply-head"><strong>' + esc(r.from) + '</strong>' +
+          '<span class="meta">' + (isNew ? '<span class="pill new">New</span> ' : '') + esc(fmtShort(r.created_at)) + '</span></p>' +
+          '<p class="reply-body">' + esc(r.body) + '</p></div>';
+      });
+      h += '</div>';
+    });
+    if (list.length > 3) {
+      h += '<div class="actions"><button type="button" class="btn small" data-act="replies-all" id="replies-all" aria-expanded="' + !!S.repliesAll + '">' +
+        (S.repliesAll ? 'Show fewer' : 'Show all (' + list.length + ')') + '</button></div>';
+    }
+    return h + '</section>';
+  }
+
   // ----- Page 3: The Why -----
   function viewWhy() {
     var why = latest('why'), tr = latest('try'), h = '';
@@ -841,7 +901,7 @@
     if (tr) {
       h += tryCard(tr, false);
     } else {
-      h += '<article class="card try-card"><p class="kicker">' + icon('star', 'sm') + 'This Month\'s Share</p><p class="empty">This month\'s share will show here.</p></article>';
+      h += '<article class="card try-card"><p class="kicker">' + icon('star', 'sm') + 'This Week\'s Share</p><p class="empty">This week\'s share will show here.</p></article>';
     }
     return h;
   }
@@ -856,7 +916,7 @@
   }
   function tryCard(tr, ro) {
     var tid = ro ? 'try-title-preview' : 'try-title';
-    return '<article class="card try-card" aria-labelledby="' + tid + '"><p class="kicker">' + icon('star', 'sm') + 'This Month\'s Share</p>' +
+    return '<article class="card try-card" aria-labelledby="' + tid + '"><p class="kicker">' + icon('star', 'sm') + 'This Week\'s Share</p>' +
       '<h3 id="' + tid + '">' + esc(tr.title) + '</h3>' +
       (tr.body ? '<p class="body-text">' + escLink(tr.body) + '</p>' : '') +
       '<p class="signed">Team Lavender\'s</p></article>';
@@ -965,7 +1025,7 @@
   function leadNotes() {
     var L = S.lead, open = L.notes.filter(function (n) { return !n.handled_at; }), done = L.notes.filter(function (n) { return n.handled_at; });
     var list = L.showHandled ? done : open;
-    var h = '<p class="hint" style="margin-top:10px">Answer one to one, in person or by text.</p>' +
+    var h = '<p class="hint" style="margin-top:10px">' + esc(NOTES_HINT) + '</p>' +
       '<div class="filter" role="group" aria-label="Which notes">' +
       '<button type="button" class="btn small" data-act="notes-filter" data-v="open" id="nf-open" aria-pressed="' + !L.showHandled + '">Open (' + open.length + ')</button>' +
       '<button type="button" class="btn small" data-act="notes-filter" data-v="done" id="nf-done" aria-pressed="' + L.showHandled + '">Handled (' + done.length + ')</button></div>';
@@ -976,13 +1036,52 @@
       h += '<article class="card note' + (n.read_at ? '' : ' unread') + (expanded ? '' : ' collapsed') + '">' +
         '<div class="note-head"><strong>' + esc(n.from) + '</strong><span class="meta">' + (n.read_at ? '' : '<span class="pill new">New</span> ') + esc(fmtShort(n.created_at)) + '</span></div>' +
         '<p class="to-line' + (n.audience === 'chosen' ? ' chosen' : '') + '">' + icon(n.audience === 'chosen' ? 'lock' : 'person', 'sm') + esc(toLine(n)) + '</p>' +
-        '<p class="note-body">' + esc(n.body) + '</p><div class="actions">';
+        '<p class="note-body">' + esc(n.body) + '</p>' + sentReplies(n);
+      var replying = L.replyTo === n.id, mineNote = S.me && n.from_id === S.me.id;
+      if (replying) h += replyBox(n);
+      h += '<div class="actions">';
       if (!expanded) h += '<button type="button" class="btn small" data-act="note-open" data-id="' + n.id + '" id="open-' + n.id + '">Open</button>';
+      if (!replying && !mineNote) h += '<button type="button" class="btn small" data-act="note-reply" data-id="' + n.id + '" id="replybtn-' + n.id + '">' + icon('send', 'sm') + '<span>Reply</span></button>';
       h += '<button type="button" class="btn small" data-act="handled" data-id="' + n.id + '" data-v="' + (n.handled_at ? '0' : '1') + '" id="handled-' + n.id + '">' + (n.handled_at ? 'Move back to open' : icon('check', 'sm') + '<span>Mark handled</span>') + '</button></div>' +
         (n.handled_at ? '<p class="meta">Handled' + (n.handled_by ? ' by ' + esc(n.handled_by) : '') + ' · ' + esc(fmtShort(n.handled_at)) + '</p>' : '');
       h += '</article>';
     });
     return h;
+  }
+
+  // Private replies under a note (leaders who can see the note see them; the team never does).
+  function sentReplies(n) {
+    return (n.replies || []).map(function (r) {
+      var me = S.me && r.from_id === S.me.id;
+      return '<div class="reply sent" id="sent-' + esc(r.id) + '"><p class="reply-head"><strong>' + (me ? 'You replied' : esc(r.from) + ' replied') + '</strong>' +
+        '<span class="meta">' + esc(fmtShort(r.created_at)) + (r.seen_at ? ' \u00b7 Seen' : '') + '</span></p><p class="reply-body">' + esc(r.body) + '</p></div>';
+    }).join('');
+  }
+  function replyBox(n) {
+    var t = S.lead.replyText[n.id] || '';
+    return '<div class="reply-box"><label class="lbl" for="replytext-' + n.id + '">Only ' + esc(firstName(n.from)) + ' will see this</label>' +
+      '<textarea id="replytext-' + n.id + '" class="short" data-reply="' + n.id + '" maxlength="500">' + esc(t) + '</textarea>' +
+      '<div class="actions"><button type="button" class="btn small primary" data-act="reply-send" data-id="' + n.id + '" id="replysend-' + n.id + '">' + icon('send', 'sm') + '<span>Send</span></button>' +
+      '<button type="button" class="btn small" data-act="reply-cancel" data-id="' + n.id + '" id="replycancel-' + n.id + '">Cancel</button></div></div>';
+  }
+  function sendReply(id) {
+    var L = S.lead, n = (L.notes || []).filter(function (x) { return x.id === id; })[0]; if (!n) return;
+    var ta = document.getElementById('replytext-' + id);
+    var body = (ta ? ta.value : L.replyText[id] || '').trim();
+    if (!body) { toast(FRIENDLY.empty_note); if (ta) ta.focus(); return; }
+    if (body.length > 500) { toast(FRIENDLY.too_long); if (ta) ta.focus(); return; }
+    var btn = document.getElementById('replysend-' + id); if (btn) btn.disabled = true;
+    var wasOpen = !n.handled_at, who = firstName(n.from);
+    rpc('leader_reply', { p_token: S.token, p_note_id: id, p_body: body }).then(function (r) {
+      delete L.replyText[id]; L.replyTo = null;
+      n.replies = (n.replies || []).concat([r]);
+      if (!n.handled_at) { n.handled_at = r.created_at; n.handled_by = S.me.name; }
+      if (!n.read_at) n.read_at = r.created_at;
+      if (document.activeElement) document.activeElement.blur();
+      render();
+      toast('Sent. Only ' + who + ' will see it.' + (wasOpen ? ' The note is under Handled now.' : ''));
+      return loadLead(true);
+    }, function (e) { if (btn) btn.disabled = false; handleErr(e); });
   }
 
   // Posts
@@ -1046,11 +1145,10 @@
       (more ? '<button type="button" class="link-btn fold-btn" data-act="fold" data-id="' + p.id + '" id="foldbtn-' + p.id + '" aria-expanded="' + open + '" aria-controls="fold-' + p.id + '">' +
         (open ? 'Show less' : 'Show all (' + all.length + ' lines)') + '</button>' : '');
   }
-  function monthName(iso) { return fmt(iso, { month: 'long' }); }
   function draftWhen(p) {
     var future = p.publish_at && new Date(p.publish_at) > new Date();
     if (p.kind === 'weekly') return p.publish_at ? ' · planned ' + fmtShort(p.publish_at) : '';
-    if (p.kind === 'try') return ' · for ' + monthName(future ? p.publish_at : new Date().toISOString());
+    if (p.kind === 'try') return future ? ' · for the week of ' + fmt(p.publish_at, { month: 'short', day: 'numeric' }) : ' · for this week';   // the Share changes every Monday (2026-11-18)
     return future ? ' · planned ' + fmtShort(p.publish_at) : ' · goes out when approved';
   }
   // "JJ: Looks good · Kade: “a thought” · Zoey: not yet"
@@ -1124,7 +1222,7 @@
     if (!drafts.length) h += '<p class="empty">No drafts waiting.</p>';
     h += main.map(postRow).join('');
     if (tries.length) {
-      h += '<h2 class="section-title" id="try-pick-title">This Month\'s Share: pick one</h2><p class="section-sub">' + (tries.length > 1 ? 'Harmonia\'s suggestions. Picking one clears the others.' : 'Picking it puts it on The Why.') + '</p>' + tries.map(postRow).join('');
+      h += '<h2 class="section-title" id="try-pick-title">This Week\'s Share: pick one</h2><p class="section-sub">' + (tries.length > 1 ? 'Harmonia\'s suggestions. Picking one clears the others.' : 'Picking it puts it on The Why.') + '</p>' + tries.map(postRow).join('');
     }
     var review = ps.filter(function (p) { return p.status === 'leader_review'; });
     if (review.length) {
@@ -1155,7 +1253,7 @@
     if (!L.form) L.form = blankForm();
     var f = L.form, k = f.kind, editing = !!f.id;
     var h = '<form class="card" data-form="post" novalidate>' +
-      '<h3 style="margin-top:0">' + (editing ? 'Edit ' : 'New ') + esc({ weekly: 'Weekly', why: 'Why', try: "This Month's Share" }[k]) + '</h3>';
+      '<h3 style="margin-top:0">' + (editing ? 'Edit ' : 'New ') + esc({ weekly: 'Weekly', why: 'Why', try: "This Week's Share" }[k]) + '</h3>';
     if (!editing || f.status === 'draft') {
       h += field('kind', 'What is it?', '<select id="f-kind" data-field="kind">' + ['weekly', 'why', 'try'].map(function (key) {
         return '<option value="' + key + '"' + (k === key ? ' selected' : '') + '>' + KIND_NAMES[key] + '</option>';
@@ -1173,15 +1271,15 @@
       h += field('body', 'A few words about it (optional)', areaF('body', f.body, ' maxlength="8000"'), 'The mission, a decision, what we want for our clients.');
       h += field('image_url', 'Photo or drawing link (optional)', inputF('image_url', 'url', f.image_url, ' placeholder="https://"'));
     } else {
-      h += field('title', 'This month\'s share', inputF('title', 'text', f.title, ' maxlength="200"'));
+      h += field('title', 'This week\'s share', inputF('title', 'text', f.title, ' maxlength="200"'));
       h += field('label', 'What kind?', '<select id="f-label" data-field="label"><option value="">Choose one (optional)</option>' + TRY_LABELS.map(function (l) {
         return '<option' + (f.label === l ? ' selected' : '') + '>' + esc(l) + '</option>'; }).join('') + '</select>');
       h += field('body', 'How to work it into your day', areaF('body', f.body, ' maxlength="8000"'));
     }
     if (!editing || f.status === 'draft' || f.status === 'leader_review') {
-      h += field('publish_at', k === 'try' ? 'Which month is it for? Pick its first day (Arizona time)' : 'When should it go out? (Arizona time)',
+      h += field('publish_at', k === 'try' ? 'Which week is it for? Pick its Monday (Arizona time)' : 'When should it go out? (Arizona time)',
         inputF('publish_at', 'datetime-local', f.publish_at || (k === 'weekly' ? toLocalInput(L.nextSlot || nextWeeklySlot()) : '')),
-        k === 'weekly' ? 'The Weekly usually goes out Monday at 8:00am.' : k === 'try' ? 'Leave empty for this month, as soon as you pick it.' : 'Leave empty to post as soon as it is approved.');
+        k === 'weekly' ? 'The Weekly usually goes out Monday at 8:00am.' : k === 'try' ? 'Leave empty for this week, as soon as you pick it.' : 'Leave empty to post as soon as it is approved.');
     }
     h += '<div class="actions">';
     if (editing && f.status !== 'draft') {
@@ -1366,7 +1464,9 @@
   function setTab(t) {
     if (S.speakingId) stopSpeaking();
     if (t !== 'home') S.earlier = freshEarlier();
+    if (S.tab === 'talk' && t !== 'talk') { S.newReplies = {}; S.repliesAll = false; }   // seen: no longer New next time
     S.tab = t;
+    if (t === 'talk') markRepliesSeen();
     if (t === 'lead') loadLead();
     if (t === 'talk' || t === 'home' || t === 'why') refreshQuiet();
     render();
@@ -1584,6 +1684,15 @@
         if (note && !note.read_at) { note.read_at = new Date().toISOString(); rpc('leader_mark_read', { p_token: S.token, p_note_id: id }).catch(handleErr); }
         render();
         break;
+      case 'note-reply':
+        S.lead.replyTo = id; S.lead.open[id] = true;
+        var rn0 = S.lead.notes.filter(function (x) { return x.id === id; })[0];
+        if (rn0 && !rn0.read_at) { rn0.read_at = new Date().toISOString(); rpc('leader_mark_read', { p_token: S.token, p_note_id: id }).catch(handleErr); }
+        render(); var rt = document.getElementById('replytext-' + id); if (rt) rt.focus();
+        break;
+      case 'reply-cancel': S.lead.replyTo = null; delete S.lead.replyText[id]; render(); var rb = document.getElementById('replybtn-' + id); if (rb) rb.focus({ preventScroll: true }); break;
+      case 'reply-send': sendReply(id); break;
+      case 'replies-all': S.repliesAll = !S.repliesAll; render(); var ra = $('#replies-all'); if (ra) ra.focus({ preventScroll: true }); break;
       case 'handled':
         rpc('leader_mark_handled', { p_token: S.token, p_note_id: id, p_handled: el.getAttribute('data-v') === '1' }).then(function () {
           toast(el.getAttribute('data-v') === '1' ? 'Marked handled.' : 'Moved back to open.'); return loadLead();
@@ -1692,6 +1801,7 @@
     else if (el.id === 'meet-body') L.meetForm.body = el.value;
     else if (el.id === 'approve-at') L.approveAt = el.value;
     else if (el.hasAttribute('data-look')) L.lookText[el.getAttribute('data-look')] = el.value;
+    else if (el.hasAttribute('data-reply')) L.replyText[el.getAttribute('data-reply')] = el.value;
     else if (el.classList.contains('pin-input')) {
       el.value = el.value.replace(/[^0-9]/g, '').slice(0, 6);
       if (S.gate && S.gate.err) { S.gate.err = null; var pe = document.querySelector('.gate .err'); if (pe) pe.remove(); }   // typing again clears the message
@@ -1786,6 +1896,7 @@
     }
     var db = store.get(DBKEY) || seed();
     if (!db.looks) db.looks = [];                     // demo data saved before "For your look"
+    if (!db.replies) db.replies = [];                 // demo data saved before private replies (2026-11-18)
     function save() { store.set(DBKEY, db); }
     function err(code) { return Promise.reject(new ApiError(code)); }
     function person(id) { return db.people.filter(function (p) { return p.id === id; })[0]; }
@@ -1837,6 +1948,8 @@
         });
     }
     function canSee(n, me) { return n.audience === 'leadership' || n.to.indexOf(me.id) >= 0; }
+    function replyOut(r) { return { id: r.id, note_id: r.note, from: firstName(person(r.from).name), from_id: r.from, body: r.body, created_at: r.created_at, seen_at: r.seen_at }; }
+    function repliesOf(nid) { return db.replies.filter(function (r) { return r.note === nid; }).sort(function (x, y) { return new Date(x.created_at) - new Date(y.created_at); }); }
     function noteOf(id, me) { var n = db.notes.filter(function (x) { return x.id === id; })[0]; if (!n || !canSee(n, me)) throw new ApiError('note_not_found'); return n; }
     function postOf(id, kinds) { var p = db.posts.filter(function (x) { return x.id === id && kinds.indexOf(x.kind) >= 0; })[0]; if (!p) throw new ApiError('post_not_found'); return p; }
     function makeMeetup(at, body, by) {
@@ -1935,8 +2048,34 @@
         return db.notes.filter(function (n) { return canSee(n, me); }).sort(function (x, y) { return new Date(y.created_at) - new Date(x.created_at); }).map(function (n) {
           return { id: n.id, from: person(n.from).name, from_id: n.from, body: n.body, audience: n.audience,
             to: n.audience === 'chosen' ? leadersList().filter(function (l) { return n.to.indexOf(l.id) >= 0; }).map(function (l) { return l.name; }) : null,
-            created_at: n.created_at, read_at: n.read_at, handled_at: n.handled_at, handled_by: n.handled_by ? person(n.handled_by).name : null };
+            created_at: n.created_at, read_at: n.read_at, handled_at: n.handled_at, handled_by: n.handled_by ? person(n.handled_by).name : null,
+            replies: repliesOf(n.id).map(replyOut) };
         });
+      },
+      leader_reply: function (a) {
+        var me = leader(a.p_token), n = noteOf(a.p_note_id, me), b = String(a.p_body || '').trim();
+        if (n.from === me.id) throw new ApiError('not_for_yourself');
+        if (person(n.from).removed) throw new ApiError('no_such_person');
+        if (!b) throw new ApiError('empty_note');
+        if (b.length > 500) throw new ApiError('too_long');
+        var r = { id: uid(), note: n.id, from: me.id, body: b, created_at: new Date().toISOString(), seen_at: null };
+        db.replies.push(r);
+        if (!n.handled_at) { n.handled_at = r.created_at; n.handled_by = me.id; }
+        n.read_at = n.read_at || r.created_at;
+        return replyOut(r);
+      },
+      my_replies: function (a) {
+        var me = who(a.p_token);
+        return db.notes.filter(function (n) { return n.from === me.id && repliesOf(n.id).length; }).map(function (n) {
+          var rs = repliesOf(n.id);
+          return { id: n.id, body: n.body, created_at: n.created_at, last: rs[rs.length - 1].created_at,
+            replies: rs.map(function (r) { return { id: r.id, from: firstName(person(r.from).name), body: r.body, created_at: r.created_at, 'new': !r.seen_at }; }) };
+        }).sort(function (x, y) { return new Date(y.last) - new Date(x.last); }).map(function (n) { delete n.last; return n; });
+      },
+      mark_replies_seen: function (a) {
+        var me = who(a.p_token), m = 0;
+        db.replies.forEach(function (r) { var n = db.notes.filter(function (x) { return x.id === r.note; })[0]; if (n && n.from === me.id && !r.seen_at) { r.seen_at = new Date().toISOString(); m++; } });
+        return { ok: true, marked: m };
       },
       leader_mark_read: function (a) { var me = leader(a.p_token), n = noteOf(a.p_note_id, me); n.read_at = n.read_at || new Date().toISOString(); return { ok: true }; },
       leader_mark_handled: function (a) {

@@ -313,3 +313,20 @@ textarea:focus, input:focus, select:focus { outline: none; border-color: var(--p
 .looks { margin: 8px 0 0; font-size: 15px; line-height: 1.5; background: var(--callout); border-radius: 10px; padding: 8px 10px; }
 .looks .look.waiting { color: var(--mute); }
 .look-row h4 { margin: 6px 0 2px; }
+
+/* Private replies (2026-11-18): "Replies to you" on Talk to us, and under a note in Leadership > Notes */
+.replies h3 { margin: 0 0 2px; }
+.reply-thread { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+.reply-thread:first-of-type { border-top: 0; padding-top: 0; }
+.your-note { margin: 0; font-size: 15px; color: var(--mute); }
+.your-note .meta { display: block; margin: 0 0 2px; font-size: 13px; font-weight: 700; }
+.your-note-body { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; white-space: pre-line; overflow-wrap: anywhere; }
+.reply { margin: 8px 0 0; padding: 10px 12px; background: var(--lilac-soft); border-radius: 12px; }
+.reply.new { box-shadow: inset 4px 0 0 var(--plum-2); }
+.reply.sent { background: var(--callout); }
+.reply-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; margin: 0; }
+.reply-head strong { color: var(--plum); }
+.reply-head .meta { margin: 0; font-size: 13px; }
+.reply-body { margin: 4px 0 0; white-space: pre-line; overflow-wrap: anywhere; }
+.reply-box { margin-top: 6px; }
+.reply-box .lbl { margin-top: 6px; }
