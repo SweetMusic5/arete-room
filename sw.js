@@ -3,7 +3,7 @@
 // Data (Supabase): always network (posts are POST requests and are never cached here);
 // the app keeps its own last copy so it can show something offline.
 // Phone alerts: shows the two kinds of alert (a new Weekly, a meetup time) and opens the app when tapped.
-const VERSION = 'arete-v5';   // 2026-11-18 (2): private replies to notes (Replies to you). v4: Earlier Weeklies; no note picker; Turn alerts on; Read it to me skips emoji; tappable links
+const VERSION = 'arete-v6';   // 2026-11-19: Learn shelf (learn/shelf.json, network first); guide pages cached under their own address. v5: 2026-11-18 (2): private replies to notes (Replies to you). v4: Earlier Weeklies; no note picker; Turn alerts on; Read it to me skips emoji; tappable links
 const SHELL = [
   './', './index.html', './styles.css', './app.js', './config.js', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png', './icons/favicon-32.png',
@@ -40,9 +40,24 @@ self.addEventListener('fetch', (e) => {
   }
   if (url.origin !== self.location.origin) return;         // anything else off-site: network only
 
-  // The page, app.js and config.js: network first (so a new version or new keys work on the very
-  // next open), falling back to the saved copy when offline. Only good responses are saved.
-  const fresh = req.mode === 'navigate' || /\/(index\.html|app\.js|config\.js)$/.test(url.pathname);
+  // Any other page on this site (the guides in learn/): network first, saved under its OWN address,
+  // so opening a guide never replaces the app's saved page.
+  const scopePath = new URL(self.registration.scope).pathname;
+  const appPage = url.pathname === scopePath || url.pathname === scopePath + 'index.html';
+  if (req.mode === 'navigate' && !appPage) {
+    const pageKey = url.origin + url.pathname;
+    e.respondWith(
+      fetch(req.url, { cache: 'no-cache', credentials: 'same-origin' }).then((res) => {
+        if (res.ok) { const copy = res.clone(); caches.open(VERSION).then((c) => c.put(pageKey, copy)); }
+        return res;
+      }).catch(() => caches.match(pageKey).then((hit) => hit || Response.error()))
+    );
+    return;
+  }
+
+  // The page, app.js, config.js and the Learn list: network first (so a new version, new keys or a
+  // new guide show on the very next open), falling back to the saved copy when offline. Only good responses are saved.
+  const fresh = req.mode === 'navigate' || /\/(index\.html|app\.js|config\.js|learn\/shelf\.json)$/.test(url.pathname);
   if (fresh) {
     const key = req.mode === 'navigate' ? './index.html' : req;
     e.respondWith(

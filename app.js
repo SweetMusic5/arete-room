@@ -13,6 +13,9 @@
   var NOTES_HINT = 'Tap Reply to answer privately: only the person who wrote it sees your reply.';
   var MIND_HELP = 'Suggestions, questions, anything at all. About work, wellness, or how you\'re doing. The leadership team will see it.';
   var WHY_LINE = 'The passion and the purpose behind what we do.';
+  var LEARN_LINE = 'Guides from our Education Library, here whenever you want them.';
+  // Learn shelf (2026-11-19): the list lives in ONE file, learn/shelf.json, next to the guides.
+  var SHELF_URL = 'learn/shelf.json';
   // Alerts: tell, don't ask (Tiffany, 2026-11-18: "just make it so they can get alerts")
   var PUSH_HEAD = 'Turn alerts on';
   var PUSH_LINE = 'Get a note on your phone every Monday when the new Weekly is out.';
@@ -184,7 +187,7 @@
   // Earlier Weeklies (bottom of The Weekly): closed until tapped, loaded fresh each time it opens.
   function freshEarlier() { return { open: false, loading: false, list: null, openId: null }; }
   function startTab() {
-    try { var t = new URL(location.href).searchParams.get('tab'); return t === 'talk' || t === 'why' ? t : 'home'; } catch (e) { return 'home'; }
+    try { var t = new URL(location.href).searchParams.get('tab'); return t === 'talk' || t === 'why' || t === 'learn' ? t : 'home'; } catch (e) { return 'home'; }
   }
   var S = {
     token: store.get('token'),
@@ -207,6 +210,7 @@
     pushOn: !!store.get('pushOn'),
     pushHome: false,                      // iPhone Safari: the Home Screen steps are open on the alerts card
     earlier: freshEarlier(),
+    shelf: { list: store.get('shelf'), loading: false, failed: false },   // Learn: last good list kept on this phone
     replies: null,                        // "Replies to you": my own notes that have a private reply (my_replies)
     newReplies: {},                       // reply ids shown as New on this visit to Talk to us
     repliesAll: false,
@@ -338,6 +342,7 @@
 
   function showApp() {
     S.gate = null; stripKeyFromUrl(); render();
+    if (S.tab === 'learn') loadShelf();
     store.set('heroSeen', true);                    // the next open shows the shorter header
     checkPushQuietly();
   }
@@ -701,20 +706,20 @@
     var focusId = document.activeElement && document.activeElement.id;
     var isLeader = S.me && S.me.role === 'leader';
     if (S.tab === 'lead' && !isLeader) S.tab = 'home';
-    var body = S.tab === 'talk' ? viewTalk() : S.tab === 'why' ? viewWhy() : S.tab === 'lead' ? viewLead() : viewHome();
+    var body = S.tab === 'talk' ? viewTalk() : S.tab === 'why' ? viewWhy() : S.tab === 'learn' ? viewLearn() : S.tab === 'lead' ? viewLead() : viewHome();
     $('#app').innerHTML = (S.tab === 'home' ? brandBlock(true, !S.heroFull) : barHeader()) +
       '<main id="main" tabindex="-1"><div class="wrap">' + body + '</div></main>' + navHtml(isLeader) + sheetHtml();
     if (focusId) { var el = document.getElementById(focusId); if (el) el.focus({ preventScroll: true }); }
   }
 
   function barHeader() {
-    var titles = { talk: 'Talk to us', why: 'The Why', lead: 'Leadership' };
+    var titles = { talk: 'Talk to us', why: 'The Why', learn: 'Learn', lead: 'Leadership' };
     return '<header class="bar"><div class="wrap"><div class="bar-row">' + icon('sprig', 'sprig') + '<h1>' + esc(titles[S.tab]) + '</h1>' + headTools(true) + '</div>' +
-      (S.tab === 'why' ? '<p class="bar-line">' + WHY_LINE + '</p>' : '') + '</div></header>';
+      (S.tab === 'why' ? '<p class="bar-line">' + WHY_LINE + '</p>' : S.tab === 'learn' ? '<p class="bar-line">' + LEARN_LINE + '</p>' : '') + '</div></header>';
   }
 
   function navHtml(isLeader) {
-    var tabs = [['home', 'The Weekly', 'home'], ['talk', 'Talk to us', 'talk'], ['why', 'The Why', 'flame']];
+    var tabs = [['home', 'The Weekly', 'home'], ['talk', 'Talk to us', 'talk'], ['why', 'The Why', 'flame'], ['learn', 'Learn', 'book']];
     if (isLeader) tabs.push(['lead', 'Leadership', 'lead']);
     var unread = isLeader && S.lead.notes ? S.lead.notes.filter(function (n) { return !n.read_at; }).length : 0;
     var looks = isLeader && !isApprover() ? lookWaiting() : 0;          // JJ, Kade, Zoey: their notes + what waits for their look
@@ -920,6 +925,45 @@
       '<h3 id="' + tid + '">' + esc(tr.title) + '</h3>' +
       (tr.body ? '<p class="body-text">' + escLink(tr.body) + '</p>' : '') +
       '<p class="signed">Team Lavender\'s</p></article>';
+  }
+
+  // ----- Page 4: Learn (the shelf of education guides) -----
+  // learn/shelf.json: { "guides": [ { "title": "...", "line": "...", "url": "learn/<file>.html" }, ... ] }, newest first.
+  // A guide's address must be a page in learn/ on this site, or a full https:// address.
+  function shelfUrl(u) {
+    u = String(u || '').trim();
+    if (/^learn\/[A-Za-z0-9][A-Za-z0-9._-]*\.html?(#[A-Za-z0-9_-]*)?$/.test(u) && u.indexOf('..') < 0) return u;
+    return /^https:\/\//i.test(u) ? u : null;
+  }
+  function cleanShelf(data) {
+    var g = data && Array.isArray(data.guides) ? data.guides : [];
+    return g.map(function (x) {
+      return x && { title: String(x.title || '').trim(), line: String(x.line || '').trim(), url: shelfUrl(x.url) };
+    }).filter(function (x) { return x && x.title && x.url; });
+  }
+  function loadShelf() {
+    if (S.shelf.loading) return;
+    S.shelf.loading = true; S.shelf.failed = false;
+    var done = function () { S.shelf.loading = false; if (S.tab === 'learn') softRender(); };
+    var f;
+    try { f = fetch(SHELF_URL, { cache: 'no-cache' }); } catch (e) { f = Promise.reject(e); }
+    f.then(function (res) { if (!res.ok) throw new Error('shelf ' + res.status); return res.json(); })
+      .then(function (data) { S.shelf.list = cleanShelf(data); store.set('shelf', S.shelf.list); done(); },
+        function () { S.shelf.failed = !S.shelf.list; done(); });   // offline: keep the last good list
+  }
+  function viewLearn() {
+    var L = S.shelf, list = L.list;
+    if (!list) {
+      if (L.failed) return '<div class="card"><p class="kicker">' + icon('book', 'sm') + 'Learn</p><p class="empty" role="status">The guides could not open just now. Please check your connection and tap Learn again.</p></div>';
+      return '<div class="card"><p class="kicker">' + icon('book', 'sm') + 'Learn</p><p class="empty" role="status">Opening the guides…</p></div>';
+    }
+    if (!list.length) return '<div class="card"><p class="kicker">' + icon('book', 'sm') + 'Learn</p><p class="empty" role="status">Guides will show here.</p></div>';
+    return '<p class="section-sub learn-sub">Tap a guide to open it.</p><ul class="learn-list">' + list.map(function (g, i) {
+      return '<li><a class="card learn-card" id="guide-' + i + '" href="' + esc(g.url) + '" target="_blank" rel="noopener noreferrer">' +
+        '<p class="kicker">' + icon('book', 'sm') + 'Guide</p>' +
+        '<h3>' + esc(g.title) + '</h3>' + (g.line ? '<p class="learn-line">' + esc(g.line) + '</p>' : '') +
+        '<span class="learn-open">Open the guide<span aria-hidden="true"> →</span></span></a></li>';
+    }).join('') + '</ul>';
   }
 
   // ----- Leadership -----
@@ -1468,6 +1512,7 @@
     S.tab = t;
     if (t === 'talk') markRepliesSeen();
     if (t === 'lead') loadLead();
+    if (t === 'learn') loadShelf();
     if (t === 'talk' || t === 'home' || t === 'why') refreshQuiet();
     render();
     window.scrollTo(0, 0);
